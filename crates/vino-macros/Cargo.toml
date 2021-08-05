@@ -1,6 +1,6 @@
 [package]
 name = "vino-macros"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2018"
 license = "BSD-3-Clause"
 description = "Macros use by vino tools"
