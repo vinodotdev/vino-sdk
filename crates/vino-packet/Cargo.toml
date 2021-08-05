@@ -1,6 +1,6 @@
 [package]
 name = "vino-packet"
-version = "0.1.0"
+version = "0.5.0"
 authors = ["Jarrod Overson <jsoverson@gmail.com>"]
 edition = "2018"
 license = "BSD-3-Clause"
@@ -11,7 +11,9 @@ wasm = []
 native = []
 
 [dependencies]
-vino-codec = { path = "../vino-codec", features = ["messagepack"] }
+vino-codec = { path = "../vino-codec", features = [
+  "messagepack",
+], version = "0.5.0" }
 serde = { version = "1.0.126", features = ["derive"] }
 serde-value = "0.7.0"
 
