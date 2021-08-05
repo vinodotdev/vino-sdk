@@ -24,10 +24,10 @@ native = [
 ]
 
 [dependencies]
-vino-packet = { path = "../vino-packet", version = "0.5.0" }
-vino-entity = { path = "../vino-entity", version = "0.5.0" }
-vino-codec = { path = "../vino-codec", version = "0.5.0" }
-vino-macros = { path = "../vino-macros", version = "0.5.0" }
+vino-packet = { path = "../vino-packet" }
+vino-entity = { path = "../vino-entity" }
+vino-codec = { path = "../vino-codec" }
+vino-macros = { path = "../vino-macros" }
 serde = { version = "1.0.126", features = ["derive"] }
 
 # For native providers
