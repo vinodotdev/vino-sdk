@@ -7,4 +7,5 @@ members = [
   "crates/vino-transport",
   "crates/vino-types",
   "crates/vino-macros",
+  "crates/vino-packet",
 ]

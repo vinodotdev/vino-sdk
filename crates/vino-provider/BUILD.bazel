@@ -1,0 +1,28 @@
+load("@vino_sdk_cargo_workspace//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "vino_provider",
+    srcs = glob(["**/*.rs"]),
+    aliases = aliases(),
+    edition = "2021",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    deps = [
+        "//crates/vino-packet:vino_packet",
+        "//crates/vino-entity:vino_entity",
+        "//crates/vino-wapc:vino_wapc",
+        "//crates/vino-codec:vino_codec",
+        "//crates/vino-transport:vino_transport",
+    ] + all_crate_deps(normal = True),
+    compile_data = ["README.md"],
+)
+
+rust_test(
+    name = "vino_provider_tests",
+    crate = ":vino_provider",
+    deps = [
+        ":vino_provider"
+    ] + all_crate_deps(normal = True) + all_crate_deps(normal_dev = True),
+)

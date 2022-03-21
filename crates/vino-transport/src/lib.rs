@@ -40,7 +40,6 @@
   clashing_extern_declarations,
   const_err,
   dead_code,
-  deprecated,
   explicit_outlives_requirements,
   improper_ctypes,
   invalid_value,
