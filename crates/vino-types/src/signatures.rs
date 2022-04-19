@@ -9,10 +9,13 @@ use crate::maps::{ComponentMap, MapWrapper, StructMap, TypeMap};
 #[must_use]
 pub struct ComponentSignature {
   /// The name of the component.
+  #[serde(default)]
   pub name: String,
   /// The component's inputs.
+  #[serde(default)]
   pub inputs: TypeMap,
   /// The component's outputs.
+  #[serde(default)]
   pub outputs: TypeMap,
 }
 
@@ -63,6 +66,16 @@ pub struct StructSignature {
   pub name: String,
   /// The fields in this struct.
   pub fields: TypeMap,
+}
+
+impl StructSignature {
+  /// Constructor for [StructSignature]
+  pub fn new<T: AsRef<str>>(name: T, fields: TypeMap) -> Self {
+    Self {
+      name: name.as_ref().to_owned(),
+      fields,
+    }
+  }
 }
 
 /// An enum representing the types of components that can be hosted.
@@ -117,8 +130,6 @@ pub enum TypeSignature {
   Datetime,
   /// Raw bytes.
   Bytes,
-  /// Raw value to be processed later.
-  Raw,
   /// Any valid value.
   Value,
   /// An internal type.
@@ -148,8 +159,9 @@ pub enum TypeSignature {
   },
   /// A type representing a ProviderLink.
   Link {
-    /// The provider ID.
-    provider: Option<String>,
+    /// The schemas that must be provided with the linked provider.
+    #[serde(default)]
+    schemas: Vec<String>,
   },
   /// A JSON-like key/value map.
   Struct,
@@ -181,7 +193,6 @@ impl FromStr for TypeSignature {
       "f64" => Self::F64,
       "bool" => Self::Bool,
       "bytes" => Self::Bytes,
-      "raw" => Self::Raw,
       "value" => Self::Value,
       "string" => Self::String,
       "datetime" => Self::Datetime,

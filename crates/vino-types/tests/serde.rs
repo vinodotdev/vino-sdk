@@ -51,7 +51,6 @@ fn test_serde_all() -> Result<()> {
     TypeSignature::F32,
     TypeSignature::F64,
     TypeSignature::Value,
-    TypeSignature::Raw,
     TypeSignature::Bytes,
     TypeSignature::String,
     TypeSignature::Datetime,
@@ -70,7 +69,7 @@ fn test_serde_all() -> Result<()> {
       option: Box::new(TypeSignature::String),
     },
     TypeSignature::Link {
-      provider: Some("link-test".to_owned()),
+      schemas: vec!["link-test".to_owned()],
     },
   ];
 
