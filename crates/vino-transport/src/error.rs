@@ -18,6 +18,10 @@ pub enum TransportError {
   #[error("Invalid payload")]
   Invalid,
 
+  /// Error used when a payload is invalid or invalidated.
+  #[error("Payload was an internal signal and should not be deserialized")]
+  Signal,
+
   /// Error from the actual payload.
   #[error("{0}")]
   Error(String),
@@ -25,6 +29,10 @@ pub enum TransportError {
   /// Exception from the actual payload.
   #[error("{0}")]
   Exception(String),
+
+  /// Error returned when a stream is collected when already consumed.
+  #[error("Stream has already been collected")]
+  AlreadyCollected,
 
   /// General errors.
   #[error("General error : {0}")]

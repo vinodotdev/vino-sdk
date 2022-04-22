@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use vino_transport::{MessageTransport, TransportWrapper};
 
+use super::prelude::ComponentError;
 use super::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,14 +20,19 @@ impl ProviderOutput {
     let mut map = HashMap::new();
     for packet in packets {
       let list = map.entry(packet.port).or_insert_with(Vec::new);
-      list.push(packet.payload);
+      if !packet.payload.is_signal() {
+        list.push(packet.payload);
+      }
     }
     Self { packets: map }
   }
 
   /// Get a list of [MessageTransport] from the specified port.
-  pub fn take<T: AsRef<str>>(&mut self, port: T) -> Option<Vec<MessageTransport>> {
-    self.packets.remove(port.as_ref())
+  pub fn drain_port(&mut self, port: &str) -> Result<Vec<MessageTransport>, ComponentError> {
+    self
+      .packets
+      .remove(port)
+      .ok_or_else(|| ComponentError::new(format!("No output available for port {}", port)))
   }
 }
 

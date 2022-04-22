@@ -215,7 +215,7 @@ fn try_from<T: DeserializeOwned>(value: MessageTransport) -> Result<T> {
       Failure::Exception(v) => Err(Error::Exception(v)),
       Failure::Error(v) => Err(Error::Error(v)),
     },
-    MessageTransport::Signal(_) => Err(Error::Invalid),
+    MessageTransport::Signal(_) => Err(Error::Signal),
   }
 }
 

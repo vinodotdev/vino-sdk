@@ -35,6 +35,7 @@ pub type CallResult = Result<Vec<u8>>;
 
 /// Common imports for WebAssembly providers and components.
 pub mod prelude {
+  pub use vino_entity::Entity;
   pub use vino_transport::error::TransportError;
   pub use vino_transport::{MessageTransport, TransportMap, TransportWrapper};
   pub use vino_types::*;
@@ -43,14 +44,7 @@ pub mod prelude {
   pub use super::error::ComponentError;
   pub use super::provider_output::{PortOutput, ProviderOutput};
   pub use super::{
-    console_log,
-    CallResult,
-    Dispatch,
-    Error as WasmError,
-    IncomingPayload,
-    JobResult,
-    PortSender,
-    WapcComponent,
+    console_log, CallResult, Dispatch, Error as WasmError, IncomingPayload, JobResult, PortSender, WapcComponent,
   };
   pub use crate::codec::messagepack::{deserialize, serialize};
   pub use crate::provider_link::ProviderLink;

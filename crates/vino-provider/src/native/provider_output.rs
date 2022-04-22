@@ -19,8 +19,8 @@ impl ProviderOutput {
   }
 
   /// Get a list of [MessageTransport] from the specified port.
-  pub async fn take<T: AsRef<str> + Send>(&mut self, port: T) -> Vec<MessageTransport> {
-    let packets: Vec<_> = self.packets.collect_port(port).await;
+  pub async fn drain_port(&mut self, port: &str) -> Vec<MessageTransport> {
+    let packets: Vec<_> = self.packets.drain_port(port).await;
     packets.into_iter().map(|p| p.payload).collect()
   }
 }

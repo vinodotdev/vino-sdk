@@ -1,4 +1,5 @@
 use vino_codec::error::CodecError;
+use vino_transport::error::TransportError;
 
 /// Errors originating from WASM components.
 #[derive(Debug)]
@@ -31,8 +32,8 @@ pub struct ComponentError(String);
 
 impl ComponentError {
   /// Constructor for a [ComponentError].
-  pub fn new<T: AsRef<str>>(message: T) -> Self {
-    Self(message.as_ref().to_owned())
+  pub fn new<T: std::fmt::Display>(message: T) -> Self {
+    Self(message.to_string())
   }
 }
 
@@ -56,6 +57,12 @@ impl From<CodecError> for Error {
   }
 }
 
+impl From<TransportError> for Error {
+  fn from(e: TransportError) -> Self {
+    Error::Codec(e.to_string())
+  }
+}
+
 impl From<&str> for Error {
   fn from(e: &str) -> Self {
     Error::Component(e.to_owned())
@@ -66,11 +73,7 @@ impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Error::HostError(v) => write!(f, "Host error: {}", v),
-      Error::ComponentNotFound(v, valid) => write!(
-        f,
-        "Component '{}' not found. Valid components are: {}",
-        v, valid
-      ),
+      Error::ComponentNotFound(v, valid) => write!(f, "Component '{}' not found. Valid components are: {}", v, valid),
       Error::Codec(e) => write!(f, "Codec error: {}", e),
       Error::MissingInput(v) => write!(f, "Missing input for port '{}'", v),
       Error::Component(v) => write!(f, "{}", v),

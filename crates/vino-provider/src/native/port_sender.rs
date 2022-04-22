@@ -195,7 +195,7 @@ mod tests {
       aggregated
     };
 
-    let mut messages: Vec<TransportWrapper> = aggregated.collect_port("test1").await;
+    let mut messages: Vec<TransportWrapper> = aggregated.drain_port("test1").await;
     assert_eq!(messages.len(), 2);
     assert_eq!(aggregated.buffered_size(), (1, 2));
     let payload: String = messages.remove(0).deserialize().unwrap();
@@ -205,7 +205,7 @@ mod tests {
     println!("Payload a2: {}", payload);
     assert_eq!(payload, "Second");
 
-    let mut messages: Vec<TransportWrapper> = aggregated.collect_port("test2").await;
+    let mut messages: Vec<TransportWrapper> = aggregated.drain_port("test2").await;
     assert_eq!(messages.len(), 2);
     assert_eq!(aggregated.buffered_size(), (0, 0));
     let payload: i64 = messages.remove(0).deserialize().unwrap();

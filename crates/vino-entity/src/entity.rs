@@ -19,8 +19,6 @@ pub enum Entity {
   Client(String),
   /// A Host entity used for entities that serve responses to requests.
   Host(String),
-  /// A schematic.
-  Schematic(String),
   /// A component or anything that can be invoked like a component.
   Component(String, String),
   /// A provider (an entity that hosts a collection of components).
@@ -101,7 +99,6 @@ impl FromStr for Entity {
         }
       }
       "ref" => Ok(Entity::reference(id)),
-      "schem" => Ok(Entity::schematic(id)),
       "prov" => {
         if let Some(mut segments) = url.path_segments() {
           if let Some(name) = segments.next() {
@@ -130,13 +127,13 @@ impl Entity {
 
   /// Constructor for [Entity::Component] on the local namespace, used when
   /// the namespace is irrelevant. Caution: this is not portable.
-  pub fn local_component<T: AsRef<str>>(name: T) -> Self {
+  pub fn local<T: AsRef<str>>(name: T) -> Self {
     Self::Component(Self::LOCAL.to_owned(), name.as_ref().to_owned())
   }
 
   /// Constructor for [Entity::Component] without a namespace, used when
   /// the namespace is irrelevant. Caution: this is not portable.
-  #[deprecated(note = "please use `local_component()` instead")]
+  #[deprecated(note = "please use `local()` instead")]
   pub fn component_direct<T: AsRef<str>>(name: T) -> Self {
     Self::Component(Self::LOCAL.to_owned(), name.as_ref().to_owned())
   }
@@ -159,11 +156,6 @@ impl Entity {
     Self::Provider(id.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::Schematic.
-  pub fn schematic<T: AsRef<str>>(id: T) -> Self {
-    Self::Schematic(id.as_ref().to_owned())
-  }
-
   /// Constructor for Entity::Host.
   pub fn host<T: AsRef<str>>(id: T) -> Self {
     Self::Host(id.as_ref().to_owned())
@@ -184,7 +176,6 @@ impl Entity {
   pub fn url(&self) -> String {
     match self {
       Entity::Test(msg) => format!("{}://test.sys/?msg={}", URL_SCHEME, msg),
-      Entity::Schematic(name) => format!("{}://{}.schem/", URL_SCHEME, name),
       Entity::Component(ns, id) => format!("{}://{}.prov/{}", URL_SCHEME, ns, id),
       Entity::Provider(name) => format!("{}://{}.prov/", URL_SCHEME, name),
       Entity::Client(id) => format!("{}://{}.client/", URL_SCHEME, id),
@@ -200,7 +191,6 @@ impl Entity {
   pub fn name(&self) -> &str {
     match self {
       Entity::Test(_) => "test",
-      Entity::Schematic(name) => name,
       Entity::Component(_, id) => id,
       Entity::Provider(name) => name,
       Entity::Client(id) => id,
@@ -216,7 +206,6 @@ impl Entity {
   pub fn namespace(&self) -> &str {
     match self {
       Entity::Test(_) => "test",
-      Entity::Schematic(name) => name,
       Entity::Component(ns, _) => ns,
       Entity::Provider(name) => name,
       Entity::Client(id) => id,
@@ -236,9 +225,6 @@ mod tests {
   fn test() -> Result<(), Error> {
     let entity = Entity::from_str("ofp://namespace.prov/comp_name")?;
     assert_eq!(entity, Entity::component("namespace", "comp_name"));
-
-    let entity = Entity::from_str("ofp://schem_id.schem/")?;
-    assert_eq!(entity, Entity::schematic("schem_id"));
 
     let entity = Entity::from_str("ofp://prov_ns.prov/")?;
     assert_eq!(entity, Entity::provider("prov_ns"));

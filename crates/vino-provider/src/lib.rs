@@ -90,13 +90,12 @@ pub mod raw;
 /// Module for the root [ProviderLink] struct.
 mod provider_link;
 pub use provider_link::ProviderLink;
-
 pub use vino_codec as codec;
 
 /// Feature-dependent prelude that imports items depending on whether the 'wasm' or 'native' features are enabled.
 pub mod prelude {
-  #[cfg(feature = "native")]
+  #[cfg(all(feature = "native", not(feature = "wasm")))]
   pub use crate::native::prelude::*;
-  #[cfg(feature = "wasm")]
+  #[cfg(all(feature = "wasm", not(feature = "native")))]
   pub use crate::wasm::prelude::*;
 }

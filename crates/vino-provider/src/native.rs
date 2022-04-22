@@ -31,18 +31,17 @@ use self::prelude::NativeComponentError;
 /// A list of imports that are common to native providers.
 pub mod prelude {
   use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+  pub use vino_entity::Entity;
   /// Type alias for [UnboundedSender<PacketWrapper>];.
   pub type PacketSender = UnboundedSender<PacketWrapper>;
   /// Type alias for [UnboundedReceiver<PacketWrapper>];.
   pub type PacketReceiver = UnboundedReceiver<PacketWrapper>;
   pub use async_trait::async_trait;
-  pub use vino_entity::{Entity, Error as EntityError};
+  pub use vino_entity::Error as EntityError;
   pub use vino_packet::v1::Payload;
   pub use vino_packet::PacketWrapper;
   pub use vino_transport::error::TransportError;
-  pub use vino_transport::{
-    BoxedTransportStream, MessageTransport, TransportMap, TransportStream, TransportWrapper,
-  };
+  pub use vino_transport::{BoxedTransportStream, MessageTransport, TransportMap, TransportStream, TransportWrapper};
   pub use vino_types::*;
 
   pub use super::error::{Error as ProviderError, NativeComponentError};
