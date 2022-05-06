@@ -85,7 +85,7 @@ mod tests {
 }
 
 #[cfg(feature = "guest")]
-pub mod exports;
+pub mod guest;
 
 /// Internal message signals module.
 pub mod signals;

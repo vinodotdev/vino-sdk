@@ -24,16 +24,22 @@ impl ProviderLink {
     &self,
     component: &str,
     payload: impl Into<vino_transport::TransportMap>,
-  ) -> Result<crate::wasm::prelude::ProviderOutput, crate::wasm::Error> {
+  ) -> vino_wapc::guest::wasm::BoxedFuture<Result<crate::wasm::prelude::ProviderOutput, crate::wasm::Error>> {
     let payload: vino_transport::TransportMap = payload.into();
-    let result = crate::wasm::host_call(
-      "1",
-      &self.get_origin_url(),
-      &Entity::component(self.1.namespace(), component).url(),
-      &vino_codec::messagepack::serialize(&payload)?,
-    )?;
-    let packets: Vec<vino_transport::TransportWrapper> = vino_codec::messagepack::deserialize(&result)?;
-    Ok(crate::wasm::prelude::ProviderOutput::new(packets))
+    let origin = self.get_origin_url();
+    let target = Entity::component(self.1.namespace(), component).url();
+    Box::pin(async move {
+      let result = vino_wapc::guest::wasm::runtime::async_host_call(
+        "1",
+        &origin,
+        &target,
+        &vino_codec::messagepack::serialize(&payload)?,
+      )
+      .await
+      .map_err(crate::wasm::Error::Protocol)?;
+      let packets: Vec<vino_transport::TransportWrapper> = vino_codec::messagepack::deserialize(&result)?;
+      Ok(crate::wasm::prelude::ProviderOutput::new(packets))
+    })
   }
 
   /// Make a call to the linked provider.
