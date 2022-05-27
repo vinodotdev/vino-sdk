@@ -1,5 +1,7 @@
 {
   "name": "test-component",
+  "format": 1,
+  "version": "1",
   "components": {
     "copy": {
       "name": "copy",

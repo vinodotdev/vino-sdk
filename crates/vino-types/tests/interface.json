@@ -1,7 +1,11 @@
 {
   "name": "blog",
+  "format": 1,
+  "version": "1",
+
   "types": {
     "Blog": {
+      "type": "struct",
       "name": "Blog",
       "fields": {
         "blog_id": {

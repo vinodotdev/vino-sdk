@@ -75,27 +75,25 @@
 // Add exceptions here
 #![allow()]
 
-#[cfg(feature = "wasm")]
+#[cfg(target_arch = "wasm32")]
 /// Traits and functions for wasm providers.
 pub mod wasm;
 
-#[cfg(feature = "native")]
+#[cfg(not(target_arch = "wasm32"))]
 /// Traits and functions for native providers.
 pub mod native;
 
-#[cfg(feature = "native")]
+#[cfg(not(target_arch = "wasm32"))]
 /// Raw value type.
 pub mod raw;
+
+/// Error module.
+pub mod error;
+
+mod provider_output;
+pub use provider_output::{PortOutput, ProviderOutput};
 
 /// Module for the root [ProviderLink] struct.
 mod provider_link;
 pub use provider_link::ProviderLink;
 pub use vino_codec as codec;
-
-/// Feature-dependent prelude that imports items depending on whether the 'wasm' or 'native' features are enabled.
-pub mod prelude {
-  #[cfg(all(feature = "native", not(feature = "wasm")))]
-  pub use crate::native::prelude::*;
-  #[cfg(all(feature = "wasm", not(feature = "native")))]
-  pub use crate::wasm::prelude::*;
-}

@@ -1,6 +1,3 @@
-use vino_codec::error::CodecError;
-use vino_transport::error::TransportError;
-
 /// Errors originating from WASM components.
 #[derive(Debug)]
 pub enum Error {
@@ -19,8 +16,8 @@ pub enum Error {
   /// An error originating from a component task.
   Component(String),
 
-  /// Error occurred in the WasmFlow WASM runtime or the protocol between WebAssembly & WasmFlow.
-  Protocol(Box<dyn std::error::Error + Send + Sync>),
+  /// An attempt to take packets for a port failed because no packets were found.
+  ResponseMissing(String),
 }
 
 #[derive(Debug)]
@@ -48,24 +45,6 @@ impl From<ComponentError> for Error {
   }
 }
 
-impl From<CodecError> for Error {
-  fn from(e: CodecError) -> Self {
-    Error::Codec(e.to_string())
-  }
-}
-
-impl From<TransportError> for Error {
-  fn from(e: TransportError) -> Self {
-    Error::Codec(e.to_string())
-  }
-}
-
-impl From<&str> for Error {
-  fn from(e: &str) -> Self {
-    Error::Component(e.to_owned())
-  }
-}
-
 impl From<String> for Error {
   fn from(e: String) -> Self {
     Error::Component(e)
@@ -80,7 +59,7 @@ impl std::fmt::Display for Error {
       Error::MissingInput(v) => write!(f, "Missing input for port '{}'", v),
       Error::Component(v) => write!(f, "{}", v),
       Error::EndOfOutput(v) => write!(f, "No output available for port '{}'", v),
-      Error::Protocol(e) => write!(f, "Protocol error: {}", e),
+      Error::ResponseMissing(v) => write!(f, "No response received for port '{}'", v),
     }
   }
 }

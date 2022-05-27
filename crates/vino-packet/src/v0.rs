@@ -1,6 +1,9 @@
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use vino_codec::messagepack::rmp_serialize;
 use vino_codec::raw::raw_serialize;
+
+use crate::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 
@@ -60,5 +63,10 @@ impl Payload {
       Ok(value) => Self::Success(value),
       Err(e) => Self::Error(e.to_string()),
     }
+  }
+
+  /// Try to deserialize a [Packet] into the target type
+  pub fn deserialize<T: DeserializeOwned>(self) -> Result<T, Error> {
+    unimplemented!()
   }
 }

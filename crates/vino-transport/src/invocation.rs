@@ -1,11 +1,13 @@
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use vino_entity::Entity;
+use vino_packet::PacketMap;
 
-use crate::TransportMap;
+use crate::{Error, TransportMap};
 
 /// A complete invocation request.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[must_use]
 pub struct Invocation {
   /// The entity that originated the request.
@@ -20,6 +22,10 @@ pub struct Invocation {
   pub tx_id: Uuid,
   /// Inherent data associated with the transaction.
   pub inherent: Option<InherentData>,
+  /// Configuration associated with the invocation.
+  pub config: Option<crate::Serialized>,
+  /// Previous state of the component.
+  pub state: Option<crate::Serialized>,
 }
 
 impl Invocation {
@@ -35,7 +41,33 @@ impl Invocation {
       id: invocation_id,
       tx_id,
       inherent,
+      config: None,
+      state: None,
     }
+  }
+
+  /// Creates an invocation with a new transaction id.
+  #[must_use]
+  pub fn into_v1_parts<C, S>(self) -> Result<(vino_packet::v1::PacketMap, Option<C>, Option<S>), Error>
+  where
+    C: std::fmt::Debug + DeserializeOwned,
+    S: std::fmt::Debug + DeserializeOwned,
+  {
+    let config = match self.config {
+      Some(v) => Some(
+        v.deserialize()
+          .map_err(|e| Error::IncomingPayload(format!("could not deserialize config: {}", e)))?,
+      ),
+      None => None,
+    };
+    let state = match self.state {
+      Some(v) => Some(
+        v.deserialize()
+          .map_err(|e| Error::IncomingPayload(format!("could not deserialize state: {}", e)))?,
+      ),
+      None => None,
+    };
+    Ok((self.payload.into_v1_map(), config, state))
   }
 
   /// Creates an invocation with a specific transaction id, to correlate a chain of.
@@ -56,21 +88,31 @@ impl Invocation {
       id: invocation_id,
       tx_id,
       inherent,
+      config: None,
+      state: None,
     }
   }
 
   /// Creates an invocation with a Test origin.
-  pub fn new_test(msg: &str, target: Entity, payload: TransportMap, inherent: Option<InherentData>) -> Invocation {
+  pub fn new_test(
+    msg: &str,
+    target: Entity,
+    payload: impl Into<PacketMap>,
+    inherent: Option<InherentData>,
+  ) -> Invocation {
+    let payload = payload.into();
     let tx_id = get_uuid();
     let invocation_id = get_uuid();
 
     Invocation {
       origin: Entity::test(msg),
       target,
-      payload,
+      payload: payload.into(),
       id: invocation_id,
       tx_id,
       inherent,
+      config: None,
+      state: None,
     }
   }
 

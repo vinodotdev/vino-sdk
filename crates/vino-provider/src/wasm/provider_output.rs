@@ -4,7 +4,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use vino_transport::{MessageTransport, TransportWrapper};
 
-use super::prelude::ComponentError;
 use super::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,11 +27,11 @@ impl ProviderOutput {
   }
 
   /// Get a list of [MessageTransport] from the specified port.
-  pub fn drain_port(&mut self, port: &str) -> Result<Vec<MessageTransport>, ComponentError> {
+  pub fn drain_port(&mut self, port: &str) -> Result<Vec<MessageTransport>, vino_wapc::guest::BoxedError> {
     self
       .packets
       .remove(port)
-      .ok_or_else(|| ComponentError::new(format!("No output available for port {}", port)))
+      .ok_or_else(|| format!("No output available for port {}", port).into())
   }
 }
 
@@ -59,7 +58,7 @@ impl PortOutput {
   }
 
   /// Grab the next value and deserialize it in one method.
-  pub fn try_next_into<T: DeserializeOwned>(&mut self) -> Result<T, Error> {
+  pub fn deserialize_next<T: DeserializeOwned>(&mut self) -> Result<T, Error> {
     match self.iter.next() {
       Some(val) => Ok(val.deserialize().map_err(|e| Error::Codec(e.to_string()))?),
       None => Err(Error::EndOfOutput(self.name.clone())),

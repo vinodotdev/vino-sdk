@@ -1,12 +1,13 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicI32, Ordering};
 
 use tokio::sync::oneshot;
 
 use super::error::Error;
 use super::imports::*;
-use super::{BoxedError, BoxedFuture, Dispatcher};
+use crate::guest::ephemeral::wasm::Dispatcher;
+use crate::guest::wasm::BoxedFuture;
+use crate::guest::BoxedError;
 thread_local! {
   pub(super) static ASYNC_HOST_CALLS: UnsafeCell<HashMap<i32,oneshot::Sender<i32>>>  = UnsafeCell::new(HashMap::new());
 }
@@ -15,8 +16,6 @@ thread_local! {
   pub(super) static DISPATCHER: UnsafeCell<Option<Box<dyn Dispatcher + Sync + Send>>>  = UnsafeCell::new(None);
 }
 type CallResult = Result<Vec<u8>, BoxedError>;
-
-static CALL_NUM: AtomicI32 = AtomicI32::new(0);
 
 pub fn exhaust_tasks() {
   wasm_rs_async_executor::single_threaded::run_while(Some(Box::new(move || {
@@ -49,12 +48,9 @@ pub fn get_dispatcher() -> Result<&'static (dyn Dispatcher + Sync + Send), Error
 
 /// The function through which all host calls take place.
 pub fn host_call(binding: &str, ns: &str, op: &str, msg: &[u8]) -> CallResult {
-  let id = CALL_NUM.fetch_add(1, Ordering::SeqCst);
-
   #[allow(unsafe_code)]
-  let callresult = unsafe {
+  let id = unsafe {
     __host_call(
-      id,
       binding.as_ptr(),
       binding.len(),
       ns.as_ptr(),
@@ -66,7 +62,7 @@ pub fn host_call(binding: &str, ns: &str, op: &str, msg: &[u8]) -> CallResult {
     )
   };
 
-  if callresult != 1 {
+  if id == 0 {
     // call was not successful
     #[allow(unsafe_code)]
     let len = unsafe { __host_error_len(id) };
@@ -108,18 +104,11 @@ pub fn console_log(s: &str) {
 #[allow(clippy::future_not_send)]
 /// The function through which all host calls take place.
 pub fn async_host_call<'a>(binding: &'a str, ns: &'a str, op: &'a str, msg: &'a [u8]) -> BoxedFuture<CallResult> {
-  let id = CALL_NUM.fetch_add(1, Ordering::SeqCst);
   let (send, recv) = tokio::sync::oneshot::channel();
-  ASYNC_HOST_CALLS.with(|cell| {
-    #[allow(unsafe_code)]
-    let map = unsafe { (&*cell).get().as_mut().unwrap() };
-    map.insert(id, send);
-  });
 
   #[allow(unsafe_code)]
-  let callresult = unsafe {
+  let id = unsafe {
     __async_host_call(
-      id,
       binding.as_ptr(),
       binding.len(),
       ns.as_ptr(),
@@ -130,11 +119,17 @@ pub fn async_host_call<'a>(binding: &'a str, ns: &'a str, op: &'a str, msg: &'a 
       msg.len(),
     )
   };
-  println!(">> guest: wasm: async host call result: {}", callresult);
+  println!(">> guest: wasm: async host call id: {}", id);
+
+  ASYNC_HOST_CALLS.with(|cell| {
+    #[allow(unsafe_code)]
+    let map = unsafe { (&*cell).get().as_mut().unwrap() };
+    map.insert(id, send);
+  });
 
   Box::pin(async move {
     println!(">> guest: inner wasm task awaiting channel recv");
-    if callresult != 0 {
+    if id == 0 {
       println!(">> guest: call failed");
       // call was not successful
       #[allow(unsafe_code)]
@@ -165,6 +160,7 @@ pub fn async_host_call<'a>(binding: &'a str, ns: &'a str, op: &'a str, msg: &'a 
             __host_response(id, retptr);
             buf.set_len(len);
           }
+          println!(">> guest: result: {:?}", buf);
           Ok(buf)
         }
         Err(e) => {

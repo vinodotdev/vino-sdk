@@ -2,11 +2,11 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_stream::{StreamExt, StreamMap};
 use tracing::*;
-use vino_packet::v1::Payload as ComponentPayload;
+use vino_packet::v1::Packet as ComponentPacket;
 use vino_packet::{Packet, PacketWrapper};
-use vino_transport::{TransportStream, TransportWrapper};
+use wasmflow_streams::PacketStream;
 
-use super::error::Error;
+type Error = Box<dyn std::error::Error + Send + Sync>;
 
 type Result = std::result::Result<(), Error>;
 
@@ -19,14 +19,14 @@ pub trait PortSender {
   fn get_port_name(&self) -> &str;
 
   /// Send a message.
-  fn send(&self, data: impl Into<ComponentPayload>) -> Result {
+  fn send(&self, data: impl Into<ComponentPacket>) -> Result {
     self.push(Packet::V1(data.into()))
   }
 
   /// Send a message then close the port.
-  fn done(&self, data: impl Into<ComponentPayload>) -> Result {
+  fn done(&self, data: impl Into<ComponentPacket>) -> Result {
     self.send(data)?;
-    self.send_message(Packet::V1(ComponentPayload::done()))
+    self.send_message(Packet::V1(ComponentPacket::done()))
   }
 
   /// Send a complete [Packet] then close the port.
@@ -50,13 +50,13 @@ pub trait PortSender {
   /// Send a payload then close the port.
   fn done_message(&self, packet: Packet) -> Result {
     self.send_message(packet)?;
-    self.send_message(ComponentPayload::done().into())
+    self.send_message(ComponentPacket::done().into())
   }
 
   /// Send an exception.
   fn send_exception(&self, payload: String) -> Result {
     self.get_port()?.send(PacketWrapper {
-      payload: ComponentPayload::exception(payload).into(),
+      payload: ComponentPacket::exception(payload).into(),
       port: self.get_port_name().to_owned(),
     })?;
     Ok(())
@@ -65,12 +65,12 @@ pub trait PortSender {
   /// Send an exception then close the port.
   fn done_exception(&self, payload: String) -> Result {
     self.send_exception(payload)?;
-    self.send_message(ComponentPayload::done().into())
+    self.send_message(ComponentPacket::done().into())
   }
 
   /// Signal that a job is finished with the port.
   fn close(&self) -> Result {
-    self.send_message(ComponentPayload::done().into())
+    self.send_message(ComponentPacket::done().into())
   }
 }
 
@@ -112,14 +112,17 @@ impl PortChannel {
 
   /// Send a messages to the channel.
   pub fn send(&self, msg: PacketWrapper) -> Result {
-    let incoming = self.incoming.as_ref().ok_or(Error::SendChannelClosed)?;
+    let incoming = self
+      .incoming
+      .as_ref()
+      .ok_or_else::<Error, _>(|| "Send channel closed".into())?;
     incoming.send(msg)?;
     Ok(())
   }
 
   /// Merge a list of [PortChannel]s into a TransportStream.
-  pub fn merge_all(buffer: &mut [&mut PortChannel]) -> TransportStream {
-    let (tx, rx) = unbounded_channel::<TransportWrapper>();
+  pub fn merge_all(buffer: &mut [&mut PortChannel]) -> PacketStream {
+    let (tx, rx) = unbounded_channel::<PacketWrapper>();
 
     let mut channels = StreamMap::new();
     for channel in buffer {
@@ -137,14 +140,15 @@ impl PortChannel {
       }
     });
 
-    TransportStream::new(UnboundedReceiverStream::new(rx))
+    PacketStream::new(Box::new(UnboundedReceiverStream::new(rx)))
   }
 }
 
 #[cfg(test)]
 mod tests {
 
-  use vino_packet::v1::Payload;
+  use vino_packet::v1::Packet;
+  use vino_transport::{TransportStream, TransportWrapper};
 
   use super::*;
   struct StringSender {
@@ -177,7 +181,7 @@ mod tests {
   async fn test_merge() -> Result {
     // This sets up the ports, sends data on them, then
     // drops the ports, thus closing them.
-    let mut aggregated = {
+    let aggregated = {
       let mut port1 = StringSender {
         port: PortChannel::new("test1"),
       };
@@ -187,13 +191,14 @@ mod tests {
 
       let aggregated = PortChannel::merge_all(&mut [&mut port1.port, &mut port2.port]);
 
-      port1.send(Payload::success(&"First"))?;
-      port2.send(Payload::success(&1))?;
-      port1.done(Payload::success(&"Second"))?;
-      port2.done(Payload::success(&2))?;
+      port1.send(Packet::success(&"First"))?;
+      port2.send(Packet::success(&1u8))?;
+      port1.done(Packet::success(&"Second"))?;
+      port2.done(Packet::success(&2u8))?;
 
       aggregated
     };
+    let mut aggregated = TransportStream::new(aggregated.map(|pw| pw.into()));
 
     let mut messages: Vec<TransportWrapper> = aggregated.drain_port("test1").await;
     assert_eq!(messages.len(), 2);
@@ -225,7 +230,7 @@ mod tests {
     };
     let mut rx = port1.port.open();
 
-    port1.send(Payload::success(&"first"))?;
+    port1.send(Packet::success(&"first"))?;
 
     let message: TransportWrapper = rx.next().await.unwrap().into();
     let payload: String = message.payload.deserialize().unwrap();
@@ -242,14 +247,14 @@ mod tests {
     };
     let mut rx = port1.port.open();
 
-    port1.done(Payload::success(&"done"))?;
+    port1.done(Packet::success(&"done"))?;
 
     let message: TransportWrapper = rx.next().await.unwrap().into();
     let payload: String = message.payload.deserialize().unwrap();
 
     assert_eq!(payload, "done");
     let message = rx.next().await.unwrap();
-    assert_eq!(message.payload, Payload::done().into());
+    assert_eq!(message.payload, Packet::done().into());
     Ok(())
   }
 
@@ -264,7 +269,7 @@ mod tests {
 
     let message = rx.next().await.unwrap();
 
-    assert_eq!(message.payload, Payload::exception("exc").into());
+    assert_eq!(message.payload, Packet::exception("exc").into());
 
     Ok(())
   }
@@ -280,9 +285,9 @@ mod tests {
 
     let message = rx.next().await.unwrap();
 
-    assert_eq!(message.payload, Payload::exception("exc").into());
+    assert_eq!(message.payload, Packet::exception("exc").into());
     let message = rx.next().await.unwrap();
-    assert_eq!(message.payload, Payload::done().into());
+    assert_eq!(message.payload, Packet::done().into());
     Ok(())
   }
 }

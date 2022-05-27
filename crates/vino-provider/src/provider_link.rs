@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 use vino_entity::Entity;
+use vino_packet::PacketMap;
+#[cfg(not(target_arch = "wasm32"))]
+use vino_wapc::guest::native::BoxedFuture;
+#[cfg(target_arch = "wasm32")]
+use vino_wapc::guest::wasm::BoxedFuture;
+
+use crate::ProviderOutput;
 
 /// An implementation that encapsulates a provider link that components can use to call out to a Vino network.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -19,37 +26,19 @@ impl ProviderLink {
   }
 
   /// Make a call to the linked provider.
-  #[cfg(all(not(feature = "native"), feature = "wasm"))]
   pub fn call(
     &self,
     component: &str,
-    payload: impl Into<vino_transport::TransportMap>,
-  ) -> vino_wapc::guest::wasm::BoxedFuture<Result<crate::wasm::prelude::ProviderOutput, crate::wasm::Error>> {
-    let payload: vino_transport::TransportMap = payload.into();
+    payload: impl Into<PacketMap>,
+  ) -> BoxedFuture<Result<ProviderOutput, crate::error::Error>> {
+    let payload = payload.into();
     let origin = self.get_origin_url();
     let target = Entity::component(self.1.namespace(), component).url();
     Box::pin(async move {
-      let result = vino_wapc::guest::wasm::runtime::async_host_call(
-        "1",
-        &origin,
-        &target,
-        &vino_codec::messagepack::serialize(&payload)?,
-      )
-      .await
-      .map_err(crate::wasm::Error::Protocol)?;
-      let packets: Vec<vino_transport::TransportWrapper> = vino_codec::messagepack::deserialize(&result)?;
-      Ok(crate::wasm::prelude::ProviderOutput::new(packets))
-    })
-  }
+      let stream = link_call(&origin, &target, &payload).await?;
 
-  /// Make a call to the linked provider.
-  #[cfg(all(not(feature = "wasm"), feature = "native"))]
-  pub fn call(
-    &self,
-    _component: &str,
-    _payload: impl Into<vino_transport::TransportMap>,
-  ) -> Result<crate::native::prelude::ProviderOutput, crate::native::Error> {
-    unimplemented!("Link calls from native providers is not implemented yet")
+      Ok(stream)
+    })
   }
 }
 
@@ -57,4 +46,21 @@ impl std::fmt::Display for ProviderLink {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}=>{}", self.0, self.1)
   }
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn link_call(origin: &str, target: &str, payload: &PacketMap) -> Result<ProviderOutput, crate::error::Error> {
+  let bytes = vino_codec::messagepack::serialize(payload)?;
+  println!("bytes for host call {:?}", bytes);
+  let result = vino_wapc::guest::wasm::runtime::async_host_call("1", &origin, &target, &bytes)
+    .await
+    .map_err(crate::error::Error::Protocol)?;
+  println!("post host call {:?}", result);
+  let packets: Vec<vino_packet::PacketWrapper> = vino_codec::messagepack::deserialize(&result)?;
+  Ok(crate::ProviderOutput::new(tokio_stream::iter(packets)))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+async fn link_call(_origin: &str, _target: &str, _payload: &PacketMap) -> Result<ProviderOutput, crate::error::Error> {
+  unimplemented!("Link calls from native providers is not implemented yet")
 }

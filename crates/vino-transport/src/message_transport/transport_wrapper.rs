@@ -47,6 +47,12 @@ impl TransportWrapper {
     self.port == crate::COMPONENT_ERROR
   }
 
+  /// Returns true if the [TransportWrapper] is a State signal from a component.
+  #[must_use]
+  pub fn is_component_state(&self) -> bool {
+    self.port == vino_packet::PacketWrapper::STATUS
+  }
+
   /// Returns Some(&str) if the [TransportWrapper] contains an error, None otherwise.
   #[must_use]
   pub fn error(&self) -> Option<&str> {
@@ -92,6 +98,15 @@ impl std::fmt::Display for TransportWrapper {
 
 impl From<PacketWrapper> for TransportWrapper {
   fn from(p: PacketWrapper) -> Self {
+    Self {
+      port: p.port,
+      payload: p.payload.into(),
+    }
+  }
+}
+
+impl From<TransportWrapper> for PacketWrapper {
+  fn from(p: TransportWrapper) -> Self {
     Self {
       port: p.port,
       payload: p.payload.into(),

@@ -30,7 +30,7 @@ impl From<RawPacket> for MessageTransport {
   }
 }
 
-impl From<RawPacket> for vino_packet::v1::Payload {
+impl From<RawPacket> for vino_packet::v1::Packet {
   fn from(v: RawPacket) -> Self {
     let packet: Packet = v.into_inner().into();
     match packet {

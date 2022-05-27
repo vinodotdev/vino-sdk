@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
-use vino_transport::{BoxedTransportStream, MessageTransport, TransportStream};
+use tokio_stream::StreamExt;
+use vino_transport::{MessageTransport, TransportStream};
+use wasmflow_streams::PacketStream;
 
 /// A wrapper object for the packets returned from the provider call.
 #[allow(missing_debug_implementations)]
@@ -12,10 +14,16 @@ pub struct ProviderOutput {
 impl ProviderOutput {
   /// Initialize a [ProviderOutput] with a [Vec<TransportWrapper>]
   #[must_use]
-  pub fn new(packets: BoxedTransportStream) -> Self {
+  pub fn new(packets: PacketStream) -> Self {
     Self {
-      packets: TransportStream::new(packets),
+      packets: TransportStream::new(packets.map(|pw| pw.into())),
     }
+  }
+
+  /// Initialize a [ProviderOutput] with a [Vec<TransportWrapper>]
+  #[must_use]
+  pub fn new_from_ts(packets: TransportStream) -> Self {
+    Self { packets }
   }
 
   /// Get a list of [MessageTransport] from the specified port.
@@ -50,7 +58,7 @@ impl<T: DeserializeOwned> PortOutput<T> {
   }
 
   /// Grab the next value and deserialize it in one method.
-  pub fn try_next_into(&mut self) -> Result<T, super::Error> {
+  pub fn deserialize_next(&mut self) -> Result<T, super::Error> {
     match self.iter.next() {
       Some(val) => Ok(val.deserialize().map_err(|e| super::Error::Codec(e.to_string()))?),
       None => Err(super::Error::EndOfOutput(self.name.clone())),

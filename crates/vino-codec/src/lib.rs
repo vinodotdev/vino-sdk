@@ -1,6 +1,5 @@
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/71604398?s=200&v=4")]
 #![doc = include_str!("../README.md")]
-
 // !!START_LINTS
 // Vino lints
 // Do not change anything between the START_LINTS and END_LINTS line.
@@ -80,11 +79,9 @@
 pub mod error;
 
 /// JSON serialization/deserialization.
-#[cfg(feature = "json")]
 pub mod json;
 
 /// MessagePack serialization/deserialization.
-#[cfg(feature = "messagepack")]
 pub mod messagepack;
 
 /// Serialization/deserialization implementations to raw [serde_value]s.

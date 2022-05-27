@@ -1,7 +1,8 @@
 use serde::Serialize;
 use vino_packet::v0;
 
-use super::{port_close, port_send, port_send_close, Error};
+use super::{port_close, port_send, port_send_close};
+use crate::error::Error;
 
 /// The WebAssembly-based PortSender trait. This trait encapsulates sending messages out of a WebAssembly component's ports.
 pub trait PortSender {
@@ -13,7 +14,7 @@ pub trait PortSender {
     port_send(
       &self.get_name(),
       self.get_id(),
-      v0::Payload::messagepack(payload),
+      v0::Payload::messagepack(payload).into(),
     )
   }
 
@@ -22,26 +23,18 @@ pub trait PortSender {
     port_send_close(
       &self.get_name(),
       self.get_id(),
-      v0::Payload::messagepack(payload),
+      v0::Payload::messagepack(payload).into(),
     )
   }
 
   /// Send an exception.
   fn send_exception(&self, message: String) -> Result<(), Error> {
-    port_send(
-      &self.get_name(),
-      self.get_id(),
-      v0::Payload::Exception(message),
-    )
+    port_send(&self.get_name(), self.get_id(), v0::Payload::Exception(message).into())
   }
 
   /// Send an exception then close the port.
   fn done_exception(&self, message: String) -> Result<(), Error> {
-    port_send_close(
-      &self.get_name(),
-      self.get_id(),
-      v0::Payload::Exception(message),
-    )
+    port_send_close(&self.get_name(), self.get_id(), v0::Payload::Exception(message).into())
   }
 
   /// Signal that a job is finished with the port.

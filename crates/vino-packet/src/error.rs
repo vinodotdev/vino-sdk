@@ -1,6 +1,8 @@
 /// The error type used when attempting to deserialize a [crate::Packet].
 #[derive(Debug)]
-pub enum DeserializationError {
+pub enum Error {
+  /// Tried to deserialize a Signal packet.
+  Signal,
   /// Invalid payload.
   Invalid,
   /// Packet was an Exception.
@@ -13,18 +15,19 @@ pub enum DeserializationError {
   InternalError,
 }
 
-impl std::fmt::Display for DeserializationError {
+impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      DeserializationError::Invalid => write!(f, "Refused to deserialize invalid payload"),
-      DeserializationError::Exception(v) => write!(f, "Exception: {}", v),
-      DeserializationError::Error(v) => write!(f, "Error: {}", v),
-      DeserializationError::DeserializationError(e) => {
+      Error::Signal => write!(f, "Tried to deserialize a Signal packet"),
+      Error::Invalid => write!(f, "Refused to deserialize invalid payload"),
+      Error::Exception(v) => write!(f, "Exception: {}", v),
+      Error::Error(v) => write!(f, "Error: {}", v),
+      Error::DeserializationError(e) => {
         write!(f, "Deserialization Error: {}", e)
       }
-      DeserializationError::InternalError => write!(f, "Internal Deserialization Error"),
+      Error::InternalError => write!(f, "Internal Deserialization Error"),
     }
   }
 }
 
-impl std::error::Error for DeserializationError {}
+impl std::error::Error for Error {}

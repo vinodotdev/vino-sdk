@@ -6,6 +6,7 @@ use std::sync::atomic::AtomicBool;
 
 use parking_lot::Mutex;
 use tokio_stream::{Stream, StreamExt};
+use vino_packet::PacketWrapper;
 
 use super::transport_wrapper::TransportWrapper;
 use crate::{MessageSignal, MessageTransport};
@@ -14,6 +15,7 @@ use crate::{MessageSignal, MessageTransport};
 pub type BoxedTransportStream = Pin<Box<dyn Stream<Item = TransportWrapper> + Send + Sync + 'static>>;
 
 /// A [TransportStream] is a stream of [crate::TransportWrapper]s.
+#[must_use]
 pub struct TransportStream {
   rx: Mutex<Pin<Box<dyn Stream<Item = TransportWrapper> + Send>>>,
   buffer: HashMap<String, Vec<TransportWrapper>>,
@@ -33,10 +35,22 @@ impl std::fmt::Debug for TransportStream {
 
 impl TransportStream {
   /// Constructor for [TransportStream].
-  #[must_use]
   pub fn new(rx: impl Stream<Item = TransportWrapper> + Send + 'static) -> Self {
     Self {
       rx: Mutex::new(Box::pin(rx)),
+      buffer: HashMap::new(),
+      collected: false,
+      done: AtomicBool::new(false),
+    }
+  }
+
+  /// Convert a packet stream into a [TransportStream]
+  pub fn from_packetstream<T>(stream: T) -> Self
+  where
+    T: Stream<Item = PacketWrapper> + Send + 'static,
+  {
+    Self {
+      rx: Mutex::new(Box::pin(stream.map(|pw| pw.into()))),
       buffer: HashMap::new(),
       collected: false,
       done: AtomicBool::new(false),
@@ -76,7 +90,7 @@ impl Stream for TransportStream {
 
 impl TransportStream {
   /// Collect all the [TransportWrapper] items associated with the passed port.
-  pub async fn drain_port<B: FromIterator<TransportWrapper> + Send + Sync>(&mut self, port: &str) -> B {
+  pub async fn drain_port(&mut self, port: &str) -> Vec<TransportWrapper> {
     let close_message = MessageTransport::Signal(MessageSignal::Done);
     if !self.collected {
       let mut buffer = HashMap::new();

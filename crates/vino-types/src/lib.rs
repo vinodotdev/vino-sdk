@@ -78,9 +78,20 @@
 /// Signatures of Vino types.
 mod signatures;
 
-pub use signatures::{ComponentSignature, HostedType, InternalType, ProviderSignature, StructSignature, TypeSignature};
+pub use signatures::{
+  ComponentSignature,
+  EnumSignature,
+  EnumVariant,
+  HostedType,
+  InternalType,
+  ProviderSignature,
+  StructSignature,
+  TypeDefinition,
+  TypeSignature,
+  WellKnownSchema,
+};
 
 /// Map-related structures holding signatures and other types.
 pub mod maps;
 
-pub use maps::{ComponentMap, MapWrapper, ProviderMap, StructMap, TypeMap};
+pub use maps::{ComponentMap, FieldMap, MapWrapper, ProviderMap, TypeMap};

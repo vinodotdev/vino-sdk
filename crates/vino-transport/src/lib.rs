@@ -98,7 +98,7 @@ pub use message_transport::stream::{BoxedTransportStream, TransportStream};
 pub use message_transport::transport_json::{JsonError, TransportJson};
 pub use message_transport::transport_map::TransportMap;
 pub use message_transport::transport_wrapper::TransportWrapper;
-pub use message_transport::{Failure, MessageSignal, MessageTransport, Success};
+pub use message_transport::{Failure, MessageSignal, MessageTransport, Serialized};
 
 /// The name of system-originating messages on a port, schematic, or origin.
 pub const SYSTEM_ID: &str = "<system>";

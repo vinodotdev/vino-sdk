@@ -3,22 +3,23 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::signatures::{ComponentSignature, ParseError, ProviderSignature, StructSignature, TypeSignature};
+use crate::signatures::{ComponentSignature, ParseError, ProviderSignature, TypeSignature};
+use crate::TypeDefinition;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(transparent)]
 #[must_use]
 /// A HashMap of type names to their signature.
-pub struct TypeMap(HashMap<String, TypeSignature>);
+pub struct FieldMap(HashMap<String, TypeSignature>);
 
-impl TypeMap {
+impl FieldMap {
   /// Constructor for [TypeMap]
   pub fn new() -> Self {
     Self(HashMap::new())
   }
 }
 
-impl MapWrapper<TypeSignature> for TypeMap {
+impl MapWrapper<TypeSignature> for FieldMap {
   fn get_inner_owned(self) -> HashMap<String, TypeSignature> {
     self.0
   }
@@ -32,17 +33,17 @@ impl MapWrapper<TypeSignature> for TypeMap {
   }
 }
 
-impl From<HashMap<String, TypeSignature>> for TypeMap {
+impl From<HashMap<String, TypeSignature>> for FieldMap {
   fn from(map: HashMap<String, TypeSignature>) -> Self {
     Self(map)
   }
 }
 
-impl TryFrom<Vec<(&str, &str)>> for TypeMap {
+impl TryFrom<Vec<(&str, &str)>> for FieldMap {
   type Error = ParseError;
 
   fn try_from(list: Vec<(&str, &str)>) -> Result<Self, ParseError> {
-    let mut map = TypeMap::new();
+    let mut map = FieldMap::new();
     for (k, v) in list {
       map.insert(k, TypeSignature::from_str(v)?);
     }
@@ -50,7 +51,7 @@ impl TryFrom<Vec<(&str, &str)>> for TypeMap {
   }
 }
 
-impl FromIterator<(String, TypeSignature)> for TypeMap {
+impl FromIterator<(String, TypeSignature)> for FieldMap {
   fn from_iter<T: IntoIterator<Item = (String, TypeSignature)>>(iter: T) -> Self {
     let mut map: HashMap<String, TypeSignature> = HashMap::new();
     for (k, v) in iter {
@@ -64,31 +65,31 @@ impl FromIterator<(String, TypeSignature)> for TypeMap {
 #[serde(transparent)]
 #[must_use]
 /// A HashMap of struct names to their signature.
-pub struct StructMap(pub HashMap<String, StructSignature>);
+pub struct TypeMap(pub HashMap<String, TypeDefinition>);
 
-impl From<HashMap<String, StructSignature>> for StructMap {
-  fn from(map: HashMap<String, StructSignature>) -> Self {
+impl From<HashMap<String, TypeDefinition>> for TypeMap {
+  fn from(map: HashMap<String, TypeDefinition>) -> Self {
     Self(map)
   }
 }
 
-impl StructMap {
-  /// Constructor for [StructMap]
+impl TypeMap {
+  /// Constructor for [TypeMap]
   pub fn new() -> Self {
     Self(HashMap::new())
   }
 }
 
-impl MapWrapper<StructSignature> for StructMap {
-  fn get_inner_owned(self) -> HashMap<String, StructSignature> {
+impl MapWrapper<TypeDefinition> for TypeMap {
+  fn get_inner_owned(self) -> HashMap<String, TypeDefinition> {
     self.0
   }
 
-  fn get_inner(&self) -> &HashMap<String, StructSignature> {
+  fn get_inner(&self) -> &HashMap<String, TypeDefinition> {
     &self.0
   }
 
-  fn get_inner_mut(&mut self) -> &mut HashMap<String, StructSignature> {
+  fn get_inner_mut(&mut self) -> &mut HashMap<String, TypeDefinition> {
     &mut self.0
   }
 }

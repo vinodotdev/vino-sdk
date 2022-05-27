@@ -1,49 +1,19 @@
-use thiserror::Error;
+use std::error;
+
 use tokio::sync::mpsc::error::SendError;
 use vino_packet::PacketWrapper;
 
-#[derive(Error, Debug)]
-/// Vino Provider's error type.
-pub enum Error {
-  /// Error returned when a component can not be found.
-  #[error("Component '{0}' not found on this provider")]
-  ComponentNotFound(String),
+use crate::error::Error;
 
-  /// Error sending output to channel.
-  #[error("Error sending output to channel")]
-  SendError,
-
-  #[error("Error converting to or from packet: {0}")]
-  /// A serialization or deserialization error.
-  Codec(String),
-
-  #[error("No output available for port '{0}'")]
-  /// An attempt to take the next packet failed.
-  EndOfOutput(String),
-
-  /// Tried to receive from an empty channel.
-  #[error("Nothing in channel to receive")]
-  ChannelEmpty,
-
-  /// Tried to send to a closed channel.
-  #[error("Tried to send a message to a closed channel")]
-  SendChannelClosed,
-
-  /// Tried to receive from a closed channel.
-  #[error("Tried to send a message to a closed channel")]
-  ReceiveChannelClosed,
-
-  /// Unspecified upstream error.
-  #[error(transparent)]
-  OtherUpstreamError(#[from] Box<dyn std::error::Error + Send + Sync>),
-}
-
-#[derive(Error, Debug)]
 #[must_use]
+
 /// The error type that components can return on failures.
+#[derive(Debug)]
 pub struct NativeComponentError {
   msg: String,
 }
+
+impl error::Error for NativeComponentError {}
 
 impl std::fmt::Display for NativeComponentError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -80,8 +50,14 @@ impl From<String> for NativeComponentError {
 }
 
 impl From<SendError<PacketWrapper>> for Error {
-  fn from(_: SendError<PacketWrapper>) -> Self {
-    Self::SendError
+  fn from(e: SendError<PacketWrapper>) -> Self {
+    Self::ChannelError(e.to_string())
+  }
+}
+
+impl From<vino_packet::error::Error> for Error {
+  fn from(e: vino_packet::error::Error) -> Self {
+    Self::Conversion(e.to_string())
   }
 }
 

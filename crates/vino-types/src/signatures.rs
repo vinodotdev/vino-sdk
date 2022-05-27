@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::maps::{ComponentMap, MapWrapper, StructMap, TypeMap};
+use crate::maps::{ComponentMap, FieldMap, MapWrapper, TypeMap};
 /// The signature of a Vino component, including its input and output types.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[must_use]
@@ -13,10 +13,10 @@ pub struct ComponentSignature {
   pub name: String,
   /// The component's inputs.
   #[serde(default)]
-  pub inputs: TypeMap,
+  pub inputs: FieldMap,
   /// The component's outputs.
   #[serde(default)]
-  pub outputs: TypeMap,
+  pub outputs: FieldMap,
 }
 
 impl ComponentSignature {
@@ -35,11 +35,21 @@ impl ComponentSignature {
 pub struct ProviderSignature {
   /// Name of the provider.
   pub name: Option<String>,
+  /// Schema format version.
+  pub format: u32,
+  /// Version of the schema.
+  pub version: String,
   /// A map of type signatures referenced elsewhere.
-  #[serde(default, skip_serializing_if = "StructMap::is_empty")]
-  pub types: StructMap,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub wellknown: Vec<WellKnownSchema>,
+  /// A map of type signatures referenced elsewhere.
+  #[serde(default, skip_serializing_if = "TypeMap::is_empty")]
+  pub types: TypeMap,
   /// A list of [ComponentSignature]s the provider hosts.
   pub components: ComponentMap,
+  /// The component's configuration for this implementation.
+  #[serde(default, skip_serializing_if = "TypeMap::is_empty")]
+  pub config: TypeMap,
 }
 
 impl ProviderSignature {
@@ -58,6 +68,71 @@ impl ProviderSignature {
   }
 }
 
+/// An entry from a well-known schema
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct WellKnownSchema {
+  /// The capability the schema provides.
+  pub capabilities: Vec<String>,
+  /// The location where you can find and validate the schema.
+  pub url: String,
+  /// The schema itself.
+  pub schema: ProviderSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[must_use]
+/// A valid type definition.
+#[serde(tag = "type")]
+pub enum TypeDefinition {
+  /// A struct definition.
+  #[serde(rename = "struct")]
+  Struct(StructSignature),
+  /// An enum definition.
+  #[serde(rename = "enum")]
+  Enum(EnumSignature),
+}
+
+/// Signatures of enum type definitions.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[must_use]
+pub struct EnumSignature {
+  /// The name of the enum.
+  pub name: String,
+  /// The variants in the enum.
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub values: Vec<EnumVariant>,
+}
+
+impl EnumSignature {
+  /// Constructor for [EnumSignature]
+  pub fn new<T: AsRef<str>>(name: T, values: Vec<EnumVariant>) -> Self {
+    Self {
+      name: name.as_ref().to_owned(),
+      values,
+    }
+  }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[must_use]
+/// An enum variant definition
+pub struct EnumVariant {
+  /// The name of the variant.
+  pub name: String,
+  /// The index of the variant.
+  pub index: u32,
+}
+
+impl EnumVariant {
+  /// Constructor for [EnumVariant]
+  pub fn new<T: AsRef<str>>(name: T, index: u32) -> Self {
+    Self {
+      name: name.as_ref().to_owned(),
+      index,
+    }
+  }
+}
+
 /// Signatures of struct-like type definitions.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[must_use]
@@ -65,12 +140,12 @@ pub struct StructSignature {
   /// The name of the struct.
   pub name: String,
   /// The fields in this struct.
-  pub fields: TypeMap,
+  pub fields: FieldMap,
 }
 
 impl StructSignature {
   /// Constructor for [StructSignature]
-  pub fn new<T: AsRef<str>>(name: T, fields: TypeMap) -> Self {
+  pub fn new<T: AsRef<str>>(name: T, fields: FieldMap) -> Self {
     Self {
       name: name.as_ref().to_owned(),
       fields,

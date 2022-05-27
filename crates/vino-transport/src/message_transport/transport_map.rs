@@ -13,7 +13,7 @@ use vino_codec::raw;
 #[cfg(feature = "json")]
 use super::transport_json::TransportJson;
 use crate::error::TransportError;
-use crate::{Error, Failure, MessageTransport, Success, TransportWrapper};
+use crate::{Error, Failure, MessageTransport, Serialized, TransportWrapper};
 pub(crate) type Result<T> = std::result::Result<T, TransportError>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -41,6 +41,16 @@ impl TransportMap {
   #[must_use]
   pub fn get_config(&self) -> &Option<HashMap<String, String>> {
     &self.1
+  }
+
+  /// Add a configuration payload to the [TransportMap].
+  #[must_use]
+  pub fn into_v1_map(self) -> vino_packet::v1::PacketMap {
+    let mut map = vino_packet::v1::PacketMap::default();
+    for (k, v) in self.0 {
+      map.insert(k, v.into());
+    }
+    map
   }
 
   /// Deserialize a CLI output JSON Object into a [TransportMap].
@@ -80,7 +90,7 @@ impl TransportMap {
       match input.split_once('=') {
         Some((name, value)) => {
           debug!("PORT:'{}', VALUE:'{}'", name, value);
-          payload.insert(name, MessageTransport::Success(Success::Json(value.to_owned())));
+          payload.insert(name, MessageTransport::Success(Serialized::Json(value.to_owned())));
         }
         None => {
           return Err(Error::DeserializationError(format!(
@@ -133,11 +143,11 @@ impl TransportMap {
     )));
     match v {
       MessageTransport::Success(success) => match success {
-        Success::MessagePack(bytes) => messagepack::deserialize(&bytes).map_err(de_err),
+        Serialized::MessagePack(bytes) => messagepack::deserialize(&bytes).map_err(de_err),
         #[cfg(feature = "raw")]
-        Success::Serialized(v) => raw::deserialize(v).map_err(de_err),
+        Serialized::Struct(v) => raw::deserialize(v).map_err(de_err),
         #[cfg(feature = "json")]
-        Success::Json(v) => json::deserialize(&v).map_err(de_err),
+        Serialized::Json(v) => json::deserialize(&v).map_err(de_err),
       },
       MessageTransport::Failure(_) => e,
       MessageTransport::Signal(_) => e,
@@ -199,14 +209,14 @@ impl TransportMap {
     for (k, v) in self.0 {
       let bytes = match v {
         MessageTransport::Success(success) => match success {
-          Success::MessagePack(bytes) => Ok(bytes),
+          Serialized::MessagePack(bytes) => Ok(bytes),
           #[cfg(feature = "raw")]
-          Success::Serialized(v) => {
+          Serialized::Struct(v) => {
             let bytes = messagepack::serialize(&v).map_err(ser_err)?;
             Ok(bytes)
           }
           #[cfg(feature = "json")]
-          Success::Json(v) => {
+          Serialized::Json(v) => {
             let value: serde_value::Value = json::deserialize(&v).map_err(de_err)?;
             let bytes = messagepack::serialize(&value).map_err(ser_err)?;
             Ok(bytes)
@@ -282,6 +292,16 @@ impl IntoIterator for TransportMap {
   }
 }
 
+impl From<vino_packet::PacketMap> for TransportMap {
+  fn from(map: vino_packet::PacketMap) -> Self {
+    let mut tmap = TransportMap::new();
+    for (k, v) in map {
+      tmap.insert(k, v.into());
+    }
+    tmap
+  }
+}
+
 impl<K, V> TryFrom<&HashMap<K, V>> for TransportMap
 where
   K: AsRef<str> + Send + Sync,
@@ -295,7 +315,7 @@ where
       .map(|(k, v)| {
         Ok((
           k.as_ref().to_owned(),
-          MessageTransport::Success(Success::MessagePack(messagepack::serialize(&v).map_err(ser_err)?)),
+          MessageTransport::Success(Serialized::MessagePack(messagepack::serialize(&v).map_err(ser_err)?)),
         ))
       })
       .filter_map(Result::ok)

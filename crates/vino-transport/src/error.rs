@@ -14,6 +14,10 @@ pub enum TransportError {
   #[error("Deserialization error: {0}")]
   DeserializationError(String),
 
+  /// Error deserializing incoming payload.
+  #[error("Error deserializing incoming payload: {0}")]
+  IncomingPayload(String),
+
   /// Error used when a payload is invalid or invalidated.
   #[error("Invalid payload")]
   Invalid,

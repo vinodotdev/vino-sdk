@@ -3,7 +3,7 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Error, Failure, MessageSignal, MessageTransport, Success};
+use crate::{Error, Failure, MessageSignal, MessageTransport, Serialized};
 /// A simplified JSON representation of a MessageTransport
 #[derive(Debug, Clone, Eq, Serialize, Deserialize, PartialEq)]
 #[must_use]
@@ -37,7 +37,7 @@ impl From<TransportJson> for MessageTransport {
           // back into JSON which doesn't feel good. This is only
           // used for command line testing and piping but if it ends
           // up being used for more it will need to be better handled.
-          MessageTransport::Success(Success::Json(v.value.to_string()))
+          MessageTransport::Success(Serialized::Json(v.value.to_string()))
         }
       },
       JsonError::Exception => match v.error_msg {
@@ -129,13 +129,13 @@ impl MessageTransport {
   pub fn as_json(&self) -> serde_json::Value {
     let output = match self {
       MessageTransport::Success(success) => match success {
-        Success::MessagePack(bytes) => handle_result_conversion(
+        Serialized::MessagePack(bytes) => handle_result_conversion(
           vino_codec::messagepack::deserialize::<serde_json::Value>(&bytes).map_err(|e| e.to_string()),
         ),
-        Success::Serialized(v) => handle_result_conversion(
+        Serialized::Struct(v) => handle_result_conversion(
           vino_codec::raw::deserialize::<serde_json::Value>(v.clone()).map_err(|e| e.to_string()),
         ),
-        Success::Json(v) => {
+        Serialized::Json(v) => {
           handle_result_conversion(vino_codec::json::deserialize::<serde_json::Value>(&v).map_err(|e| e.to_string()))
         }
       },

@@ -4,7 +4,6 @@ extern "C" {
   pub fn __console_log(ptr: *const u8, len: usize);
   #[doc(hidden)]
   pub fn __host_call(
-    id: i32,
     bd_ptr: *const u8,
     bd_len: usize,
     ns_ptr: *const u8,
@@ -13,10 +12,9 @@ extern "C" {
     op_len: usize,
     ptr: *const u8,
     len: usize,
-  ) -> usize;
+  ) -> i32;
   #[doc(hidden)]
   pub(crate) fn __async_host_call(
-    call: i32,
     bd_ptr: *const u8,
     bd_len: usize,
     ns_ptr: *const u8,
@@ -25,7 +23,7 @@ extern "C" {
     op_len: usize,
     ptr: *const u8,
     len: usize,
-  ) -> usize;
+  ) -> i32;
   #[doc(hidden)]
   pub fn __host_response(id: i32, ptr: *const u8);
   #[doc(hidden)]
@@ -41,5 +39,5 @@ extern "C" {
   #[doc(hidden)]
   pub fn __guest_request(id: i32, op_ptr: *const u8, ptr: *const u8);
   #[doc(hidden)]
-  pub fn __guest_call_response_ready(call: i32, code: i32);
+  pub fn __guest_call_response_ready(id: i32, code: i32);
 }
