@@ -8,7 +8,7 @@ pub mod v1 {
   /// Convert an [vino_transport::Invocation] into an [IncomingPayload].
   pub fn from_invocation<C, S>(
     invocation: wasmflow_invocation::Invocation,
-  ) -> Result<IncomingPayload<vino_packet::v1::PacketMap, C, S>, Box<dyn std::error::Error + Send + Sync>>
+  ) -> Result<IncomingPayload<wasmflow_packet::v1::PacketMap, C, S>, Box<dyn std::error::Error + Send + Sync>>
   where
     C: std::fmt::Debug + DeserializeOwned,
     S: std::fmt::Debug + DeserializeOwned,

@@ -1,8 +1,8 @@
 pub mod packet {
-  // pub use vino_packet::*;
-  pub use vino_packet::{PacketMap, PacketWrapper};
+  // pub use wasmflow_packet::*;
+  pub use wasmflow_packet::{PacketMap, PacketWrapper};
   pub mod v1 {
-    pub use vino_packet::v1::{Packet, PacketMap};
+    pub use wasmflow_packet::v1::{Packet, PacketMap};
   }
 }
 
@@ -14,10 +14,11 @@ pub mod sdk {
   pub type BoxedError = Box<dyn std::error::Error + Send + Sync>;
 
   pub use futures::{Stream, StreamExt};
-  pub use vino_provider::{PortOutput, ProviderLink, ProviderOutput};
-  pub use vino_transport::{MessageTransport, TransportWrapper};
   pub use wasmflow_boundary::IncomingPayload;
+  pub use wasmflow_collection_link::ProviderLink;
+  #[cfg(not(target_arch = "wasm32"))]
   pub use wasmflow_invocation::Invocation;
+  pub use wasmflow_output::{PortOutput, ProviderOutput};
   pub use wasmflow_traits::{Component, IntoInputs, PortChannel, Writable};
 
   pub mod payload {
@@ -51,14 +52,11 @@ pub mod sdk {
     pub mod runtime {
       pub use wasmflow_component::guest::wasm::runtime::register_dispatcher;
     }
-    pub use vino_provider::wasm::{port_send, port_send_close, PortOutput, ProviderOutput};
+    pub use wasmflow_component::guest::wasm::runtime::{port_send, port_send_close};
   }
 
   #[cfg(not(target_arch = "wasm32"))]
-  pub mod native {
-    // pub use vino_provider::native::port_sender::{PortChannel, PortSender};
-    pub use vino_provider::native::provider_output::{PortOutput, ProviderOutput};
-  }
+  pub mod native {}
 }
 
 pub mod error {
@@ -127,14 +125,14 @@ pub mod error {
 
   impl std::error::Error for Error {}
 
-  impl From<vino_packet::error::Error> for Error {
-    fn from(e: vino_packet::error::Error) -> Self {
+  impl From<wasmflow_packet::error::Error> for Error {
+    fn from(e: wasmflow_packet::error::Error) -> Self {
       Error::Upstream(Box::new(e))
     }
   }
 
-  impl From<vino_codec::Error> for Error {
-    fn from(e: vino_codec::Error) -> Self {
+  impl From<wasmflow_codec::Error> for Error {
+    fn from(e: wasmflow_codec::Error) -> Self {
       Error::CodecError(e.to_string())
     }
   }
@@ -148,17 +146,16 @@ pub mod error {
 
 pub mod codec {
   #[cfg(not(target_arch = "wasm32"))]
-  pub use vino_codec::json;
-  pub use vino_codec::messagepack;
+  pub use wasmflow_codec::json;
+  pub use wasmflow_codec::messagepack;
 }
 
 pub mod provider {
   pub mod error {}
-  // pub use vino_provider::*;
 }
 
 pub mod types {
-  pub use vino_transport::{BoxedTransportStream, TransportStream};
+  pub use vino_transport::TransportStream;
   pub use wasmflow_interface::*;
   pub use wasmflow_streams::PacketStream;
 }

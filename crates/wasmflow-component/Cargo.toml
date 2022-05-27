@@ -21,14 +21,15 @@ v1 = ["wasmflow-boundary/v1"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio-stream = { version = "0.1", features = [] }
+wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
 
 [dependencies]
 cfg-if = "1.0.0"
+wasmflow-codec = { path = "../wasmflow-codec", version = "0.9.0", features = [] }
 wasmflow-streams = { path = "../wasmflow-streams", version = "0.9.0", features = [] }
 wasmflow-boundary = { path = "../wasmflow-boundary", version = "0.9.0", features = [] }
 vino-transport = { path = "../vino-transport", version = "0.9.0", features = [] }
-wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
-vino-packet = { path = "../vino-packet", version = "0.9.0" }
+wasmflow-packet = { path = "../wasmflow-packet", version = "0.9.0" }
 async-trait = "0.1.53"
 wasm-rs-async-executor = { git = "https://github.com/vinodotdev/async-executor.git", branch = "run_while", features = [
   "cooperative-browser",

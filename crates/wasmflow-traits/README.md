@@ -1,4 +1,4 @@
-# vino-packet
+# wasmflow-packet
 
 The Vino packet crate contains the consistent message structure for arbitrary output
 from Vino components and providers.

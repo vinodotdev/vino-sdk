@@ -2,8 +2,8 @@ use serde::Serialize;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_stream::{StreamExt, StreamMap};
-use vino_packet::v1::Packet as V1;
-use vino_packet::{Packet, PacketWrapper};
+use wasmflow_packet::v1::Packet as V1;
+use wasmflow_packet::{Packet, PacketWrapper};
 use wasmflow_streams::PacketStream;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -141,7 +141,7 @@ impl PortChannel {
 #[cfg(test)]
 mod tests {
 
-  use vino_packet::v1::Packet;
+  use wasmflow_packet::v1::Packet;
   use vino_transport::{TransportStream, TransportWrapper};
 
   use super::*;

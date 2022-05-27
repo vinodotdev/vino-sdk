@@ -17,13 +17,13 @@ use std::fmt::Display;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use vino_codec::error::CodecError;
+use wasmflow_codec::error::CodecError;
 #[cfg(feature = "json")]
-use vino_codec::json;
-use vino_codec::messagepack;
+use wasmflow_codec::json;
+use wasmflow_codec::messagepack;
 #[cfg(feature = "raw")]
-use vino_codec::raw;
-use vino_packet::{v0, v1, Packet};
+use wasmflow_codec::raw;
+use wasmflow_packet::{v0, v1, Packet};
 
 use crate::{Error, Result};
 
@@ -67,9 +67,9 @@ impl Serialized {
   /// Deserialize a [Serialized] payload into the destination type.
   pub fn deserialize<T: DeserializeOwned>(self) -> std::result::Result<T, CodecError> {
     match self {
-      Serialized::MessagePack(v) => vino_codec::messagepack::deserialize(&v),
-      Serialized::Struct(v) => vino_codec::raw::deserialize(v),
-      Serialized::Json(v) => vino_codec::json::deserialize(&v),
+      Serialized::MessagePack(v) => wasmflow_codec::messagepack::deserialize(&v),
+      Serialized::Struct(v) => wasmflow_codec::raw::deserialize(v),
+      Serialized::Json(v) => wasmflow_codec::json::deserialize(&v),
     }
   }
 
@@ -80,9 +80,10 @@ impl Serialized {
     // so changing between them is infallible.
     match self {
       Serialized::MessagePack(v) => v,
-      Serialized::Struct(v) => vino_codec::messagepack::serialize(&v).unwrap(),
+      Serialized::Struct(v) => wasmflow_codec::messagepack::serialize(&v).unwrap(),
       Serialized::Json(v) => {
-        vino_codec::messagepack::serialize(&vino_codec::json::deserialize::<serde_value::Value>(&v).unwrap()).unwrap()
+        wasmflow_codec::messagepack::serialize(&wasmflow_codec::json::deserialize::<serde_value::Value>(&v).unwrap())
+          .unwrap()
       }
     }
   }
@@ -269,27 +270,29 @@ impl From<Packet> for MessageTransport {
         v0::Payload::CloseBracket => MessageTransport::Signal(MessageSignal::CloseBracket),
       },
       Packet::V1(v) => match v {
-        vino_packet::v1::Packet::Success(success) => match success {
-          vino_packet::v1::Serialized::MessagePack(bytes) => MessageTransport::Success(Serialized::MessagePack(bytes)),
+        wasmflow_packet::v1::Packet::Success(success) => match success {
+          wasmflow_packet::v1::Serialized::MessagePack(bytes) => {
+            MessageTransport::Success(Serialized::MessagePack(bytes))
+          }
           #[cfg(feature = "raw")]
-          vino_packet::v1::Serialized::Struct(v) => MessageTransport::Success(Serialized::Struct(v)),
+          wasmflow_packet::v1::Serialized::Struct(v) => MessageTransport::Success(Serialized::Struct(v)),
           #[cfg(not(feature = "raw"))]
-          vino_packet::v1::Serialized::Struct(v) => MessageTransport::success(&v),
+          wasmflow_packet::v1::Serialized::Struct(v) => MessageTransport::success(&v),
           #[cfg(feature = "json")]
-          vino_packet::v1::Serialized::Json(v) => MessageTransport::Success(Serialized::Json(v)),
+          wasmflow_packet::v1::Serialized::Json(v) => MessageTransport::Success(Serialized::Json(v)),
           #[cfg(not(feature = "json"))]
-          vino_packet::v1::Serialized::Json(v) => MessageTransport::success(&v),
+          wasmflow_packet::v1::Serialized::Json(v) => MessageTransport::success(&v),
         },
-        vino_packet::v1::Packet::Failure(failure) => match failure {
-          vino_packet::v1::Failure::Invalid => MessageTransport::Failure(Failure::Invalid),
-          vino_packet::v1::Failure::Exception(v) => MessageTransport::Failure(Failure::Exception(v)),
-          vino_packet::v1::Failure::Error(v) => MessageTransport::Failure(Failure::Error(v)),
+        wasmflow_packet::v1::Packet::Failure(failure) => match failure {
+          wasmflow_packet::v1::Failure::Invalid => MessageTransport::Failure(Failure::Invalid),
+          wasmflow_packet::v1::Failure::Exception(v) => MessageTransport::Failure(Failure::Exception(v)),
+          wasmflow_packet::v1::Failure::Error(v) => MessageTransport::Failure(Failure::Error(v)),
         },
-        vino_packet::v1::Packet::Signal(signal) => match signal {
-          vino_packet::v1::Signal::Done => MessageTransport::Signal(MessageSignal::Done),
-          vino_packet::v1::Signal::OpenBracket => todo!(),
-          vino_packet::v1::Signal::CloseBracket => todo!(),
-          vino_packet::v1::Signal::Status(v) => MessageTransport::Signal(MessageSignal::Status(v)),
+        wasmflow_packet::v1::Packet::Signal(signal) => match signal {
+          wasmflow_packet::v1::Signal::Done => MessageTransport::Signal(MessageSignal::Done),
+          wasmflow_packet::v1::Signal::OpenBracket => todo!(),
+          wasmflow_packet::v1::Signal::CloseBracket => todo!(),
+          wasmflow_packet::v1::Signal::Status(v) => MessageTransport::Signal(MessageSignal::Status(v)),
         },
       },
     }
@@ -396,7 +399,7 @@ mod tests {
 
   #[test_log::test]
   fn messagepack_rt() -> Result<()> {
-    // let mut original = TransportMap::new();
+    // let mut original = TransportMap::default();
     let mut payload = MessageTransport::success(&false);
     println!("payload: {:?}", payload);
     payload.to_messagepack();

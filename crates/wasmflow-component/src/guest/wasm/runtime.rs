@@ -2,12 +2,14 @@ use std::cell::UnsafeCell;
 use std::collections::HashMap;
 
 use tokio::sync::oneshot;
+use wasmflow_codec::messagepack::serialize;
 
 use super::error::Error;
 use super::imports::*;
 use crate::guest::ephemeral::wasm::Dispatcher;
 use crate::guest::wasm::BoxedFuture;
 use crate::guest::BoxedError;
+use crate::OutputSignal;
 thread_local! {
   pub(super) static ASYNC_HOST_CALLS: UnsafeCell<HashMap<i32,oneshot::Sender<i32>>>  = UnsafeCell::new(HashMap::new());
 }
@@ -42,7 +44,7 @@ pub fn get_dispatcher() -> Result<&'static (dyn Dispatcher + Sync + Send), Error
   #[allow(unsafe_code)]
   DISPATCHER.with(|cell| {
     let option: &mut Option<Box<dyn Dispatcher + Sync + Send>> = unsafe { &mut *cell.get() };
-    option.as_deref().ok_or_else(|| Error::Async)
+    option.as_deref().ok_or(Error::Async)
   })
 }
 
@@ -102,6 +104,7 @@ pub fn console_log(s: &str) {
 }
 
 #[allow(clippy::future_not_send)]
+#[must_use]
 /// The function through which all host calls take place.
 pub fn async_host_call<'a>(binding: &'a str, ns: &'a str, op: &'a str, msg: &'a [u8]) -> BoxedFuture<CallResult> {
   let (send, recv) = tokio::sync::oneshot::channel();
@@ -170,4 +173,43 @@ pub fn async_host_call<'a>(binding: &'a str, ns: &'a str, op: &'a str, msg: &'a 
       }
     }
   })
+}
+
+fn serialize_payload(id: u32, packet: Option<wasmflow_packet::Packet>) -> Result<Vec<u8>, Error> {
+  let bytes = match packet {
+    Some(packet) => {
+      let bytes = serialize(&packet)?;
+      let mut payload = Vec::with_capacity(bytes.len() + 4);
+      payload.extend_from_slice(&id.to_be_bytes());
+      payload.extend(bytes.into_iter());
+      payload
+    }
+    None => {
+      let mut payload = Vec::with_capacity(4);
+      payload.extend_from_slice(&id.to_be_bytes());
+      payload
+    }
+  };
+  Ok(bytes)
+}
+
+/// Send a [Packet] out the named port.
+pub fn port_send(port_name: &str, id: u32, packet: wasmflow_packet::Packet) -> Result<(), Error> {
+  let bytes = serialize_payload(id, Some(packet))?;
+  host_call("0", port_name, OutputSignal::Output.as_str(), &bytes).map_err(Error::Protocol)?;
+  Ok(())
+}
+
+/// Send a [Packet] out the named port and immediately close it.
+pub fn port_send_close(port_name: &str, id: u32, packet: wasmflow_packet::Packet) -> Result<(), Error> {
+  let bytes = serialize_payload(id, Some(packet))?;
+  host_call("0", port_name, OutputSignal::OutputDone.as_str(), &bytes).map_err(Error::Protocol)?;
+  Ok(())
+}
+
+/// Close the referenced port.
+pub fn port_close(port_name: &str, id: u32) -> Result<(), Error> {
+  let bytes = serialize_payload(id, None)?;
+  host_call("0", port_name, OutputSignal::Done.as_str(), &bytes).map_err(Error::Protocol)?;
+  Ok(())
 }

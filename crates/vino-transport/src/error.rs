@@ -1,14 +1,14 @@
 use thiserror::Error;
 
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug)]
 
 /// The public Error type for [crate::MessageTransport] values.
 /// These errors signify a held error or an error transforming
 /// a [crate::MessageTransport] into another type.
 pub enum TransportError {
   /// Error to proxy codec errors.
-  #[error("Serialization error: {0}")]
-  SerializationError(String),
+  #[error("De/serialization error: {0}")]
+  Codec(#[from] wasmflow_codec::Error),
 
   /// Error to proxy decoding errors.
   #[error("Deserialization error: {0}")]
@@ -41,9 +41,10 @@ pub enum TransportError {
   /// General errors.
   #[error("General error : {0}")]
   Other(String),
+}
 
-  /// Error resulting from a [vino_entity::Entity], usually related to parsing an Entity url.
-  #[error(transparent)]
-  #[cfg(feature = "invocation")]
-  Entity(#[from] vino_entity::Error),
+impl From<serde_json::Error> for TransportError {
+  fn from(v: serde_json::Error) -> Self {
+    Self::DeserializationError(v.to_string())
+  }
 }

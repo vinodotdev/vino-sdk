@@ -1,8 +1,8 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use vino_entity::Entity;
-use vino_packet::PacketMap;
+use wasmflow_entity::Entity;
+use wasmflow_packet::PacketMap;
 use vino_transport::TransportMap;
 
 use crate::error::Error;
@@ -48,7 +48,7 @@ impl Invocation {
   }
 
   /// Creates an invocation with a new transaction id.
-  pub fn into_v1_parts<C, S>(self) -> Result<(vino_packet::v1::PacketMap, Option<C>, Option<S>), Error>
+  pub fn into_v1_parts<C, S>(self) -> Result<(wasmflow_packet::v1::PacketMap, Option<C>, Option<S>), Error>
   where
     C: std::fmt::Debug + DeserializeOwned,
     S: std::fmt::Debug + DeserializeOwned,

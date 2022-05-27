@@ -87,7 +87,7 @@ pub(crate) type Result<T> = std::result::Result<T, error::TransportError>;
 pub type Error = error::TransportError;
 
 #[cfg(feature = "async")]
-pub use message_transport::stream::{BoxedTransportStream, TransportStream};
+pub use message_transport::stream::TransportStream;
 #[cfg(feature = "json")]
 pub use message_transport::transport_json::{JsonError, TransportJson};
 pub use message_transport::transport_map::TransportMap;

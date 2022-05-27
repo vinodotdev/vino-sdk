@@ -20,7 +20,7 @@ impl FieldMap {
 }
 
 impl FieldMap {
-  vino_macros::kv_impl! {TypeSignature, pub}
+  wasmflow_macros::kv_impl! {TypeSignature, pub}
 }
 
 impl From<HashMap<String, TypeSignature>> for FieldMap {
@@ -68,7 +68,7 @@ impl TypeMap {
   pub fn new() -> Self {
     Self(HashMap::new())
   }
-  vino_macros::kv_impl! {TypeDefinition, pub}
+  wasmflow_macros::kv_impl! {TypeDefinition, pub}
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -84,7 +84,7 @@ impl From<HashMap<String, ProviderSignature>> for ProviderMap {
 }
 
 impl ProviderMap {
-  vino_macros::kv_impl! {ProviderSignature, pub}
+  wasmflow_macros::kv_impl! {ProviderSignature, pub}
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -94,7 +94,7 @@ impl ProviderMap {
 pub struct ComponentMap(pub HashMap<String, ComponentSignature>);
 
 impl ComponentMap {
-  vino_macros::kv_impl! {ComponentSignature, pub}
+  wasmflow_macros::kv_impl! {ComponentSignature, pub}
 }
 
 impl From<HashMap<String, ComponentSignature>> for ComponentMap {

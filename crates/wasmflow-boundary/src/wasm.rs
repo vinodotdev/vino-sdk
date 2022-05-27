@@ -12,7 +12,7 @@ where
   S: std::fmt::Debug + serde::de::DeserializeOwned,
 {
   let (id, payload, config, state): (u32, HashMap<String, Vec<u8>>, Option<C>, Option<S>) =
-    vino_codec::messagepack::deserialize(buffer)?;
+    wasmflow_codec::messagepack::deserialize(buffer)?;
 
   Ok(IncomingPayload::new(id, EncodedMap(payload), config, state))
 }

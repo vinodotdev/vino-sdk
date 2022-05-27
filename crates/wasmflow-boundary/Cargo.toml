@@ -16,18 +16,19 @@ homepage = "https://docs.vino.dev"
 maintenance = { status = "actively-developed" }
 
 [features]
-v1 = ["vino-packet/v1"]
+v1 = ["wasmflow-packet/v1"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
 
 [dependencies]
-vino-codec = { path = "../vino-codec", version = "0.9.0", features = [] }
-vino-entity = { path = "../vino-entity", version = "0.9.0", features = [] }
-vino-packet = { path = "../vino-packet", version = "0.9.0", features = [] }
+wasmflow-codec = { path = "../wasmflow-codec", version = "0.9.0", features = [] }
+wasmflow-entity = { path = "../wasmflow-entity", version = "0.9.0", features = [] }
+wasmflow-packet = { path = "../wasmflow-packet", version = "0.9.0", features = [] }
 serde = { version = "1.0", features = ["derive"] }
 vino-transport = { path = "../vino-transport", version = "0.9.0", features = [] }
-wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
+
 [dev-dependencies]

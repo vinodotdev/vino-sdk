@@ -1,6 +1,6 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use vino_packet::PacketWrapper;
+use wasmflow_packet::PacketWrapper;
 
 use crate::error::TransportError;
 use crate::{MessageTransport, SYSTEM_ID};
@@ -50,7 +50,7 @@ impl TransportWrapper {
   /// Returns true if the [TransportWrapper] is a State signal from a component.
   #[must_use]
   pub fn is_component_state(&self) -> bool {
-    self.port == vino_packet::PacketWrapper::STATUS
+    self.port == wasmflow_packet::PacketWrapper::STATUS
   }
 
   /// Returns Some(&str) if the [TransportWrapper] contains an error, None otherwise.

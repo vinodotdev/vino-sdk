@@ -16,7 +16,7 @@ homepage = "https://docs.vino.dev"
 [features]
 
 [dependencies]
-vino-packet = { path = "../vino-packet", version = "0.9.0" }
+wasmflow-packet = { path = "../wasmflow-packet", version = "0.9.0" }
 wasmflow-streams = { path = "../wasmflow-streams", version = "0.9.0" }
 serde = { version = "1" }
 async-trait = "0.1"

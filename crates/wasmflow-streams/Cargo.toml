@@ -19,7 +19,7 @@ v0 = []
 v1 = []
 
 [dependencies]
-vino-packet = { path = "../vino-packet", version = "0.9.0" }
+wasmflow-packet = { path = "../wasmflow-packet", version = "0.9.0" }
 vino-transport = { path = "../vino-transport", version = "0.9.0" }
 futures = "0.3.21"
 pin-project-lite = "0.2.9"

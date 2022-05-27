@@ -6,13 +6,10 @@ use std::sync::atomic::AtomicBool;
 
 use parking_lot::Mutex;
 use tokio_stream::{Stream, StreamExt};
-use vino_packet::PacketWrapper;
+use wasmflow_packet::PacketWrapper;
 
 use super::transport_wrapper::TransportWrapper;
 use crate::{MessageSignal, MessageTransport};
-
-/// A boxed [Stream] that produces [TransportWrapper]s
-pub type BoxedTransportStream = Pin<Box<dyn Stream<Item = TransportWrapper> + Send + Sync + 'static>>;
 
 /// A [TransportStream] is a stream of [crate::TransportWrapper]s.
 #[must_use]
@@ -26,7 +23,6 @@ pub struct TransportStream {
 impl std::fmt::Debug for TransportStream {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("TransportStream")
-      .field("rx", &String::from("<Ignored>"))
       .field("buffer", &self.buffer)
       .field("collected", &self.collected)
       .finish()
@@ -109,7 +105,7 @@ impl TransportStream {
     self.buffer.remove(port).unwrap_or_default().into_iter().collect()
   }
 
-  /// Collect all the [TransportWrapper] items associated with the passed port.
+  /// Collect all the [TransportWrapper] items in the stream.
   pub async fn drain<B: FromIterator<TransportWrapper> + Send + Sync>(&mut self) -> B {
     let messages: Vec<_> = if !self.collected {
       self.collected = true;
