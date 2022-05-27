@@ -74,6 +74,7 @@ impl Serialized {
   }
 
   /// Convert a [Serialized] payload into messagepack bytes.
+  #[must_use]
   pub fn into_messagepack(self) -> Vec<u8> {
     // These unwraps *should* be OK. The internal data should be pre-validated
     // so changing between them is infallible.

@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::maps::{ComponentMap, FieldMap, MapWrapper, TypeMap};
+use crate::maps::{ComponentMap, FieldMap, TypeMap};
 /// The signature of a Vino component, including its input and output types.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[must_use]

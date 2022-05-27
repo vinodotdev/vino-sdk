@@ -1,6 +1,5 @@
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/71604398?s=200&v=4")]
 #![doc = include_str!("../README.md")]
-
 // !!START_LINTS
 // Vino lints
 // Do not change anything between the START_LINTS and END_LINTS line.
@@ -76,20 +75,13 @@
 // Add exceptions here
 #![allow()]
 
-pub use tracing;
-
 #[macro_export]
-/// Test a condition and if it is false, return the supplied error
+/// Test a condition and if it is false, return the supplied error.
+/// It's like an assert! that doesn't panic.
 macro_rules! ensure {
-    ($cond:expr $(,)?) => {
-        $crate::ensure!(
-            $cond,
-            $crate::private::concat!("Condition failed: `", $crate::private::stringify!($cond), "`"),
-        )
-    };
     ($cond:expr, $msg:literal $(,)?) => {
         if !$cond {
-            return Err($crate::Error::Other($msg.to_string()));
+            return Err($msg.into());
         }
     };
     ($cond:expr, $err:expr $(,)?) => {
@@ -105,224 +97,126 @@ macro_rules! ensure {
 }
 
 #[macro_export]
-/// Turns an expression into an error while logging it.
-macro_rules! log_err {
-  ($exp:expr) => {{
-    tracing::error!("{}", $exp);
-    Err($exp)
-  }};
-}
+/// Test a condition and if it is false, return the supplied error.
+/// It's like an assert! that doesn't panic.
+macro_rules! map_wrapper {
+  ($cond:ident, $t:ty, $($arg:tt)*) => {
+    impl $cond {
 
-#[allow(unused_macros)]
-#[macro_export]
-/// Wrap an expression that prints debug output to the terminal while returning the original expression. Useful for logging without disturbing the code's structure.
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-///   let vec = vec![1,2,3,4,5];
-///   let doubled: Vec<_> = vec.iter().map(|i| log_tap!(i * 2)).collect();
-/// # }
-/// ```
-macro_rules! log_tap {
-  ($expr:expr $(,)?) => {{
-    let _e = $expr;
-    let indent = "]]]]";
-    println!("{}\n{} {}\n{}", indent, indent, format!("{:?}", $expr), indent);
-
-    _e
-  }};
-}
-
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
-
-#[macro_export]
-/// Aggressively prints to the terminal. Useful for rapid debugging in a sea of
-/// terminal output.
-///
-/// ## Example
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-///
-/// let data = vec![1,2,3];
-/// highlight!("{:?}", data);
-/// # }
-/// ```
-macro_rules! highlight {
-    ($($arg:tt)+) => (
-      {
-        let indent = ">>>>>";
-        let focus = ">>>>>>";
-        let start = ">>>";
-        let end =   ">>>";
-        println!("{}\n{}\n{} {}\n{}\n{}", start,indent,focus,format!($($arg)+),indent,end);
+      #[must_use]
+      /// Get the value for the requested field.
+      fn get<K: AsRef<str>>(&self, field: K) -> Option<&$t> {
+        self.0.get(field.as_ref())
       }
-    )
-}
 
-#[macro_export]
-/// Returns an unwrapped Option if Some() otherwise returns the passed expression
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-///
-/// fn gen_msg(num: Option<i32>) -> String {
-///   let num = some_or_bail!(num, "No number passed".to_owned());
-///   format!("Num was {}", num)
-/// }
-///
-/// let msg = gen_msg(Some(22));
-/// println!("{}", msg);
-/// # assert_eq!(msg, "Num was 22");
-/// let msg = gen_msg(None);
-/// println!("{}", msg);
-/// # assert_eq!(msg, "No number passed");
-/// # }
-/// ```
-macro_rules! some_or_bail {
-  ($opt:expr, $ret:expr $(,)?) => {{
-    match $opt {
-      Some(stuff) => stuff,
-      None => {
-        return $ret;
+      #[must_use]
+      /// Get the value for the requested field.
+      fn contains_key<K: AsRef<str>>(&self, field: K) -> bool {
+        self.0.contains_key(field.as_ref())
       }
+
+      /// Insert a $t into the inner map.
+      fn insert<K: AsRef<str>>(&mut self, field: K, value: $t) {
+        self.0.insert(field.as_ref().to_owned(), value);
+      }
+
+      $($arg)*
     }
-  }};
-}
-
-#[macro_export]
-/// Returns an unwrapped Option if Some() otherwise continues a loop.
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-///
-/// for i in vec![Some(1), None, Some(2)] {
-
-///   println!("Starting loop");
-///   let num = some_or_continue!(i);
-///   println!("Got {}", num);
-/// }
-/// # }
-/// ```
-macro_rules! some_or_continue {
-  ($opt:expr $(,)?) => {{
-    match $opt {
-      Some(stuff) => stuff,
-      None => {
-        continue;
-      }
-    }
-  }};
-}
-
-#[macro_export]
-/// Returns an unwrapped Ok if Ok() otherwise continues a loop.
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-///
-/// for i in vec![Ok(1), Err("Oh no"), Ok(2)] {
-
-///   println!("Starting loop");
-///   let num = ok_or_continue!(i);
-///   println!("Got {}", num);
-/// }
-/// # }
-/// ```
-macro_rules! ok_or_continue {
-  ($opt:expr $(,)?) => {{
-    match $opt {
-      Ok(stuff) => stuff,
-      Err(e) => {
-        tracing::debug!("Unexpected but recoverable error: {}", e.to_string());
-        continue;
-      }
-    }
-  }};
-}
-
-#[macro_export]
-/// Returns an unwrapped Result if Ok() otherwise returns the passed expression
-///
-/// ```
-/// # use vino_macros::*;
-/// # fn main() {
-/// fn generates_err() -> Result<i32, String>{ Err("Got an error".to_owned())}
-/// fn generates_ok() -> Result<i32, String>{ Ok(42) }
-///
-/// fn do_work() -> i32 {
-///   let num_work = ok_or_bail!(generates_err(), 0);
-///   println!("Doing {} units of work...", num_work);
-///   num_work
-/// }
-///
-/// let work_done = do_work();
-/// println!("Did {} units of work", work_done);
-/// # assert_eq!(work_done, 0);
-/// # }
-/// ```
-macro_rules! ok_or_bail {
-  ($result:expr, $ret:expr $(,)?) => {{
-    match $result {
-      Ok(stuff) => stuff,
-      Err(e) => {
-        tracing::debug!("Unexpected but recoverable error: {}", e.to_string());
-        return $ret;
-      }
-    }
-  }};
-}
-
-lazy_static::lazy_static!(
-  #[doc(hidden)]
-  pub static ref START_TIMES: Arc<Mutex<HashMap<String, Instant>>> = {
-    Arc::new(Mutex::new(HashMap::new()))
   };
-);
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! mark {
-  () => {{
-    let _ = $crate::START_TIMES.lock().and_then(|mut h| {
-      h.insert($crate::function_path!(), std::time::Instant::now());
-      let msg = format!("BENCH::mark:{}:{}", $crate::function_path!(), line!());
-      println!("{}", msg);
-      Ok(())
-    });
-  }};
 }
 
 #[macro_export]
-#[doc(hidden)]
-macro_rules! elapsed {
-  () => {{
-    let _ = $crate::START_TIMES.lock().and_then(|h| {
-      let time = h.get(&$crate::function_path!());
-      let elapsed = time
-        .map(|t| t.elapsed().as_micros().to_string())
-        .unwrap_or("no start time marked...".to_owned());
-      println!("BENCH::{}:{}: +{}μs", $crate::function_path!(), line!(), elapsed);
-      Ok(())
-    });
-  }};
-}
-#[macro_export]
-#[doc(hidden)]
-macro_rules! function_path {
-  () => {{
-    fn f() {}
-    fn type_name_of<T>(_: T) -> &'static str {
-      std::any::type_name::<T>()
+/// Test a condition and if it is false, return the supplied error.
+/// It's like an assert! that doesn't panic.
+macro_rules! kv_impl {
+  ($t:ty) => {
+    kv_impl!{$t, pub(self)}
+  };
+  ($t:ty, $v:vis) => {
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Get the value for the requested field.
+    $v fn get<K: AsRef<str>>(&self, field: K) -> Option<&$t> {
+      self.0.get(field.as_ref())
     }
-    let name = type_name_of(f);
-    name[..name.len() - 16].to_owned()
-  }};
+
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Get the value for the requested field.
+    $v fn get_mut<K: AsRef<str>>(&mut self, field: K) -> Option<&mut $t> {
+      self.0.get_mut(field.as_ref())
+    }
+
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Get the value for the requested field.
+    $v fn contains_key<K: AsRef<str>>(&self, field: K) -> bool {
+      self.0.contains_key(field.as_ref())
+    }
+
+    /// Insert a $t into the inner map.
+    #[allow(unused, unreachable_pub)]
+    $v fn insert<K: AsRef<str>>(&mut self, field: K, value: $t) {
+      self.0.insert(field.as_ref().to_owned(), value);
+    }
+
+
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Return a list of names in the inner HashMap.
+    $v fn names(&self) -> Vec<String> {
+      self.0.keys().cloned().collect()
+    }
+
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Return true if the inner HashMap is empty.
+    $v fn is_empty(&self) -> bool {
+      self.0.is_empty()
+    }
+
+    /// Return the inner HashMap.
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    $v fn into_inner(self) -> std::collections::HashMap<String, $t> {
+      self.0
+    }
+
+    /// Return a reference to the inner HashMap.
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    $v fn inner(&self) -> &std::collections::HashMap<String, $t> {
+      &self.0
+    }
+
+    #[must_use]
+    #[allow(unused, unreachable_pub)]
+    /// Returns the number of fields in the map.
+    $v fn len(&self) -> usize {
+      self.0.len()
+    }
+  };
+}
+
+#[cfg(test)]
+mod test {
+  use anyhow::Result;
+
+  #[test]
+  fn map_wrapper() -> Result<()> {
+    #[derive(Default)]
+    struct MyMap(std::collections::HashMap<String, u32>);
+    impl MyMap {
+      fn custom_len(&self) -> usize {
+        self.0.len() * 10
+      }
+      kv_impl! {u32}
+    }
+
+    let mut map = MyMap::default();
+    map.insert("hey", 0);
+
+    assert_eq!(map.custom_len(), 10);
+    Ok(())
+  }
 }

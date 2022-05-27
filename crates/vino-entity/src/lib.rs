@@ -79,10 +79,10 @@
 mod entity;
 
 /// Crate errors.
-pub mod error;
+mod error;
 
 pub use entity::{Entity, SystemEntity};
-pub use error::EntityError as Error;
+pub use error::ParseError as Error;
 
 #[macro_use]
 extern crate vino_macros;

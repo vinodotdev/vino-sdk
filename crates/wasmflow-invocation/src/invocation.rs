@@ -3,8 +3,9 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use vino_entity::Entity;
 use vino_packet::PacketMap;
+use vino_transport::TransportMap;
 
-use crate::{Error, TransportMap};
+use crate::error::Error;
 
 /// A complete invocation request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,9 +24,9 @@ pub struct Invocation {
   /// Inherent data associated with the transaction.
   pub inherent: Option<InherentData>,
   /// Configuration associated with the invocation.
-  pub config: Option<crate::Serialized>,
+  pub config: Option<vino_transport::Serialized>,
   /// Previous state of the component.
-  pub state: Option<crate::Serialized>,
+  pub state: Option<vino_transport::Serialized>,
 }
 
 impl Invocation {
@@ -47,7 +48,6 @@ impl Invocation {
   }
 
   /// Creates an invocation with a new transaction id.
-  #[must_use]
   pub fn into_v1_parts<C, S>(self) -> Result<(vino_packet::v1::PacketMap, Option<C>, Option<S>), Error>
   where
     C: std::fmt::Debug + DeserializeOwned,

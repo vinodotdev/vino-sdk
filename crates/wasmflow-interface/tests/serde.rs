@@ -2,7 +2,15 @@ use std::fs::read_to_string;
 
 use anyhow::Result;
 use pretty_assertions::assert_eq;
-use vino_types::{InternalType, ProviderSignature, TypeSignature, MapWrapper, TypeDefinition, EnumSignature, EnumVariant, ComponentSignature};
+use wasmflow_interface::{
+  ComponentSignature,
+  EnumSignature,
+  EnumVariant,
+  InternalType,
+  ProviderSignature,
+  TypeDefinition,
+  TypeSignature,
+};
 
 #[test_log::test]
 fn test_deserialize() -> Result<()> {
@@ -82,10 +90,13 @@ fn test_serde_all() -> Result<()> {
 #[test_log::test]
 fn test_serde_rt() -> Result<()> {
   let mut sig = ProviderSignature::new("test-sig");
-  sig.types.insert("Unit", TypeDefinition::Enum(EnumSignature::new("Unit", vec![
-    EnumVariant::new("millis", 0),
-    EnumVariant::new("micros", 1),
-  ])));
+  sig.types.insert(
+    "Unit",
+    TypeDefinition::Enum(EnumSignature::new(
+      "Unit",
+      vec![EnumVariant::new("millis", 0), EnumVariant::new("micros", 1)],
+    )),
+  );
   let mut compsig = ComponentSignature::new("my_component");
   compsig.inputs.insert("input1", TypeSignature::String);
   compsig.inputs.insert("input2", TypeSignature::U64);
@@ -94,10 +105,9 @@ fn test_serde_rt() -> Result<()> {
 
   sig.components.insert(compsig.name.clone(), compsig);
 
-
   let json = serde_json::to_string(&sig)?;
   eprintln!("{}", json);
-  let actual : ProviderSignature = serde_json::from_str(&json)?;
+  let actual: ProviderSignature = serde_json::from_str(&json)?;
   assert_eq!(sig, actual);
 
   Ok(())

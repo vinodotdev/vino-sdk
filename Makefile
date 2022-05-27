@@ -43,6 +43,11 @@ test: ## Test all crates in the workspace
 	cargo doc --no-deps --workspace --all-features
 	cargo test --workspace --all-features
 
+.PHONY: check
+check: ## Check both local and wasm32 targets
+	cargo check --workspace
+	cargo check --workspace --target wasm32-unknown-unknown --exclude "wasmflow-invocation"
+
 .PHONY: update-lint
 update-lint: ## Update clippy lint definitions in sub crates
 	npm run update-lint

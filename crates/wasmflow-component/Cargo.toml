@@ -1,5 +1,5 @@
 [package]
-name = "vino-wapc"
+name = "wasmflow-component"
 version = "0.9.0"
 edition = "2021"
 license = "BSD-3-Clause"
@@ -23,12 +23,11 @@ v1 = ["wasmflow-boundary/v1"]
 tokio-stream = { version = "0.1", features = [] }
 
 [dependencies]
-cfg-if="1.0.0"
+cfg-if = "1.0.0"
 wasmflow-streams = { path = "../wasmflow-streams", version = "0.9.0", features = [] }
 wasmflow-boundary = { path = "../wasmflow-boundary", version = "0.9.0", features = [] }
-vino-transport = { path = "../vino-transport", version = "0.9.0", features = [
-  "invocation",
-] }
+vino-transport = { path = "../vino-transport", version = "0.9.0", features = [] }
+wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
 vino-packet = { path = "../vino-packet", version = "0.9.0" }
 async-trait = "0.1.53"
 wasm-rs-async-executor = { git = "https://github.com/vinodotdev/async-executor.git", branch = "run_while", features = [

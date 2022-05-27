@@ -11,6 +11,7 @@ pub use crate::v0;
 pub use crate::v1;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[must_use]
 /// The output payload that component's push out of output ports.
 pub enum Packet {
   /// Version 0 of the payload format (unstable).
@@ -63,21 +64,22 @@ impl Packet {
   pub fn to_messagepack(&mut self) {
     match &self {
       Packet::V0(_) => unimplemented!("Converted a V0 packet to messagepack is not implemented via this function."),
-      Packet::V1(v) => match v {
-        v1::Packet::Success(v) => match v {
-          v1::Serialized::MessagePack(_) => { /* nothing */ }
-          v1::Serialized::Struct(v) => {
-            *self = v1::Packet::Success(v1::Serialized::MessagePack(
-              vino_codec::messagepack::serialize(&v).unwrap(),
-            ))
-            .into()
+      Packet::V1(v) => {
+        if let v1::Packet::Success(v) = v {
+          match v {
+            v1::Serialized::MessagePack(_) => { /* nothing */ }
+            v1::Serialized::Struct(v) => {
+              *self = v1::Packet::Success(v1::Serialized::MessagePack(
+                vino_codec::messagepack::serialize(&v).unwrap(),
+              ))
+              .into();
+            }
+            v1::Serialized::Json(json) => {
+              *self = v1::Packet::Success(v1::Serialized::Json(vino_codec::json::serialize(&json).unwrap())).into();
+            }
           }
-          v1::Serialized::Json(json) => {
-            *self = v1::Packet::Success(v1::Serialized::Json(vino_codec::json::serialize(&json).unwrap())).into()
-          }
-        },
-        _ => { /* nothing */ }
-      },
+        }
+      }
     };
   }
 
@@ -95,6 +97,7 @@ fn try_from<T: DeserializeOwned>(value: Packet) -> Result<T, Error> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[must_use]
 /// A [PacketWrapper] is a wrapper around a [Packet] with the port name embedded.
 pub struct PacketWrapper {
   /// The port name.
@@ -133,7 +136,6 @@ pub struct PacketMap {
 
 impl PacketMap {
   /// Constructor for a new [PacketMap]
-  #[must_use]
   pub fn new(map: HashMap<String, Packet>) -> Self {
     Self { inner: map }
   }

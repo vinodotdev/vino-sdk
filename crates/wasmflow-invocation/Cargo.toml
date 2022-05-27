@@ -1,5 +1,5 @@
 [package]
-name = "wasmflow-boundary"
+name = "wasmflow-invocation"
 version = "0.9.0"
 edition = "2021"
 license = "BSD-3-Clause"
@@ -16,18 +16,13 @@ homepage = "https://docs.vino.dev"
 maintenance = { status = "actively-developed" }
 
 [features]
-v1 = ["vino-packet/v1"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 
 [dependencies]
-vino-codec = { path = "../vino-codec", version = "0.9.0", features = [] }
-vino-entity = { path = "../vino-entity", version = "0.9.0", features = [] }
-vino-packet = { path = "../vino-packet", version = "0.9.0", features = [] }
+vino-transport = { path = "../vino-transport", version = "0.9.0" }
+vino-packet = { path = "../vino-packet", version = "0.9.0", features = ["all"] }
+vino-entity = { path = "../vino-entity", version = "0.9.0" }
 serde = { version = "1.0", features = ["derive"] }
-vino-transport = { path = "../vino-transport", version = "0.9.0", features = [] }
-wasmflow-invocation = { path = "../wasmflow-invocation", version = "0.9.0" }
+uuid = { version = "0.8", features = ["v4", "serde"] }
+thiserror = "1.0"
+
 [dev-dependencies]

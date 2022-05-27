@@ -27,7 +27,7 @@ impl ProviderOutput {
   }
 
   /// Get a list of [MessageTransport] from the specified port.
-  pub fn drain_port(&mut self, port: &str) -> Result<Vec<MessageTransport>, vino_wapc::guest::BoxedError> {
+  pub fn drain_port(&mut self, port: &str) -> Result<Vec<MessageTransport>, wasmflow_component::guest::BoxedError> {
     self
       .packets
       .remove(port)

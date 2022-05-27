@@ -3,8 +3,8 @@
 //!
 #![allow(unsafe_code, missing_debug_implementations, missing_copy_implementations)]
 
-use vino_wapc::guest::wasm::runtime::*;
-use vino_wapc::OutputSignal;
+use wasmflow_component::guest::wasm::runtime::*;
+use wasmflow_component::OutputSignal;
 
 /// Module that encapsulates the wasm version of a provider output stream.
 pub(crate) mod provider_output;

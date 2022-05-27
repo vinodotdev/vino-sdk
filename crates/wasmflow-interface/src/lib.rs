@@ -75,30 +75,23 @@
 // Add exceptions here
 #![allow()]
 
-/// The crate's error module;.
-pub mod error;
+/// Signatures of Vino types.
+mod signatures;
 
-/// The core module that contains the [MessageTransport] and [TransportWrapper]
-mod message_transport;
+pub use signatures::{
+  ComponentSignature,
+  EnumSignature,
+  EnumVariant,
+  HostedType,
+  InternalType,
+  ProviderSignature,
+  StructSignature,
+  TypeDefinition,
+  TypeSignature,
+  WellKnownSchema,
+};
 
-pub(crate) type Result<T> = std::result::Result<T, error::TransportError>;
+/// Map-related structures holding signatures and other types.
+pub mod maps;
 
-/// The crate's Error type.
-pub type Error = error::TransportError;
-
-#[cfg(feature = "async")]
-pub use message_transport::stream::{BoxedTransportStream, TransportStream};
-#[cfg(feature = "json")]
-pub use message_transport::transport_json::{JsonError, TransportJson};
-pub use message_transport::transport_map::TransportMap;
-pub use message_transport::transport_wrapper::TransportWrapper;
-pub use message_transport::{Failure, MessageSignal, MessageTransport, Serialized};
-
-/// The name of system-originating messages on a port, schematic, or origin.
-pub const SYSTEM_ID: &str = "<system>";
-
-/// The reserved port name to use when a component returns an error before it has a chance to send it to an output port.
-pub const COMPONENT_ERROR: &str = "<error>";
-
-#[macro_use]
-extern crate tracing;
+pub use maps::{ComponentMap, FieldMap, ProviderMap, TypeMap};

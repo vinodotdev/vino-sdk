@@ -75,23 +75,6 @@
 // Add exceptions here
 #![allow()]
 
-/// Signatures of Vino types.
-mod signatures;
-
-pub use signatures::{
-  ComponentSignature,
-  EnumSignature,
-  EnumVariant,
-  HostedType,
-  InternalType,
-  ProviderSignature,
-  StructSignature,
-  TypeDefinition,
-  TypeSignature,
-  WellKnownSchema,
-};
-
-/// Map-related structures holding signatures and other types.
-pub mod maps;
-
-pub use maps::{ComponentMap, FieldMap, MapWrapper, ProviderMap, TypeMap};
+mod error;
+mod invocation;
+pub use invocation::{InherentData, Invocation};

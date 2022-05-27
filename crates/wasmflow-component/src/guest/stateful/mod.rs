@@ -31,7 +31,7 @@ pub mod native {
 
     fn dispatch(
       &self,
-      payload: vino_transport::Invocation,
+      payload: wasmflow_invocation::Invocation,
       context: Self::Context,
     ) -> BoxedFuture<Result<PacketStream, BoxedError>>;
   }

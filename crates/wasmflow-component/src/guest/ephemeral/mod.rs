@@ -19,7 +19,7 @@ pub mod native {
   use crate::guest::BoxedError;
 
   pub trait Dispatcher {
-    fn dispatch(&self, payload: vino_transport::Invocation) -> BoxedFuture<Result<PacketStream, BoxedError>>;
+    fn dispatch(&self, payload: wasmflow_invocation::Invocation) -> BoxedFuture<Result<PacketStream, BoxedError>>;
   }
 }
 

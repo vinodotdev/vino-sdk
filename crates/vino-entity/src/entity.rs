@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::error::EntityError as Error;
+use crate::error::ParseError as Error;
 
 #[derive(Debug, Clone, PartialEq)]
 /// The entity being referenced across systems or services.
@@ -21,8 +21,8 @@ pub enum Entity {
   Host(String),
   /// A component or anything that can be invoked like a component.
   Component(String, String),
-  /// A provider (an entity that hosts a collection of components).
-  Provider(String),
+  /// A collection of components.
+  Collection(String),
   /// A reference to an instance of an entity.
   Reference(String),
 }
@@ -67,24 +67,19 @@ impl Display for Entity {
   }
 }
 
-pub(crate) const URL_SCHEME: &str = "ofp";
+pub(crate) const URL_SCHEME: &str = "wafl";
 
 impl FromStr for Entity {
   type Err = Error;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     use url::Url;
-    let url = Url::parse(s).map_err(|e| Error::ParseError(e.to_string()))?;
-    ensure!(
-      url.scheme() == URL_SCHEME,
-      Error::ParseError(format!("Invalid scheme: {}", url.scheme()))
-    );
-    let host = url
-      .host_str()
-      .ok_or_else(|| Error::ParseError("No authority supplied".to_owned()))?;
+    let url = Url::parse(s).map_err(|e| Error::General(e.to_string()))?;
+    ensure!(url.scheme() == URL_SCHEME, Error::Scheme(url.scheme().to_owned()));
+    let host = url.host_str().ok_or_else(|| Error::Authority)?;
     let (id, kind) = host
       .split_once('.')
-      .ok_or_else(|| Error::ParseError(format!("Invalid authority format '{}', no dot.", host)))?;
+      .ok_or_else(|| Error::InvalidAuthority(host.to_owned()))?;
     match kind {
       "sys" => {
         let (_, msg) = url
@@ -99,7 +94,7 @@ impl FromStr for Entity {
         }
       }
       "ref" => Ok(Entity::reference(id)),
-      "prov" => {
+      "coll" => {
         if let Some(mut segments) = url.path_segments() {
           if let Some(name) = segments.next() {
             if !name.is_empty() {
@@ -108,16 +103,16 @@ impl FromStr for Entity {
           }
         }
 
-        Ok(Entity::provider(id))
+        Ok(Entity::collection(id))
       }
       "client" => Ok(Entity::client(id)),
       "host" => Ok(Entity::host(id)),
-      _ => Err(Error::ParseError(format!("Invalid authority kind: {}", kind))),
+      _ => Err(Error::InvalidAuthorityKind(kind.to_owned())),
     }
   }
 }
 impl Entity {
-  /// Namespace for components local to a provider.
+  /// Namespace for components local to a collection.
   pub const LOCAL: &'static str = "__local__";
 
   /// Constructor for [Entity::Component].
@@ -138,7 +133,7 @@ impl Entity {
     Self::Component(Self::LOCAL.to_owned(), name.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::System.
+  /// Constructor for [Entity::System].
   pub fn system<T: AsRef<str>, U: AsRef<str>>(name: T, value: U) -> Self {
     Self::System(SystemEntity {
       name: name.as_ref().to_owned(),
@@ -146,27 +141,27 @@ impl Entity {
     })
   }
 
-  /// Constructor for Entity::Test.
+  /// Constructor for an [Entity::Test].
   pub fn test<T: AsRef<str>>(msg: T) -> Self {
     Self::Test(msg.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::Provider.
-  pub fn provider<T: AsRef<str>>(id: T) -> Self {
-    Self::Provider(id.as_ref().to_owned())
+  /// Constructor for an [Entity::Collection].
+  pub fn collection<T: AsRef<str>>(id: T) -> Self {
+    Self::Collection(id.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::Host.
+  /// Constructor for [Entity::Host].
   pub fn host<T: AsRef<str>>(id: T) -> Self {
     Self::Host(id.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::Client.
+  /// Constructor for [Entity::Client].
   pub fn client<T: AsRef<str>>(id: T) -> Self {
     Self::Client(id.as_ref().to_owned())
   }
 
-  /// Constructor for Entity::Client.
+  /// Constructor for [Entity::Client].
   pub fn reference<T: AsRef<str>>(id: T) -> Self {
     Self::Reference(id.as_ref().to_owned())
   }
@@ -176,8 +171,8 @@ impl Entity {
   pub fn url(&self) -> String {
     match self {
       Entity::Test(msg) => format!("{}://test.sys/?msg={}", URL_SCHEME, msg),
-      Entity::Component(ns, id) => format!("{}://{}.prov/{}", URL_SCHEME, ns, id),
-      Entity::Provider(name) => format!("{}://{}.prov/", URL_SCHEME, name),
+      Entity::Component(ns, id) => format!("{}://{}.coll/{}", URL_SCHEME, ns, id),
+      Entity::Collection(name) => format!("{}://{}.coll/", URL_SCHEME, name),
       Entity::Client(id) => format!("{}://{}.client/", URL_SCHEME, id),
       Entity::Host(id) => format!("{}://{}.host/", URL_SCHEME, id),
       Entity::System(e) => format!("{}://{}.sys/?msg={}", URL_SCHEME, e.name, e.value),
@@ -192,7 +187,7 @@ impl Entity {
     match self {
       Entity::Test(_) => "test",
       Entity::Component(_, id) => id,
-      Entity::Provider(name) => name,
+      Entity::Collection(name) => name,
       Entity::Client(id) => id,
       Entity::Host(id) => id,
       Entity::System(e) => &e.name,
@@ -207,7 +202,7 @@ impl Entity {
     match self {
       Entity::Test(_) => "test",
       Entity::Component(ns, _) => ns,
-      Entity::Provider(name) => name,
+      Entity::Collection(name) => name,
       Entity::Client(id) => id,
       Entity::Host(id) => id,
       Entity::System(e) => &e.name,
@@ -223,11 +218,11 @@ mod tests {
   use super::*;
   #[test]
   fn test() -> Result<(), Error> {
-    let entity = Entity::from_str("ofp://namespace.prov/comp_name")?;
+    let entity = Entity::from_str("ofp://namespace.coll/comp_name")?;
     assert_eq!(entity, Entity::component("namespace", "comp_name"));
 
-    let entity = Entity::from_str("ofp://prov_ns.prov/")?;
-    assert_eq!(entity, Entity::provider("prov_ns"));
+    let entity = Entity::from_str("ofp://some_ns.coll/")?;
+    assert_eq!(entity, Entity::collection("some_ns"));
 
     let entity = Entity::from_str("ofp://host_id.host/")?;
     assert_eq!(entity, Entity::host("host_id"));

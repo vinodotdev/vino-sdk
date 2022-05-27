@@ -3,8 +3,20 @@ use thiserror::Error;
 #[derive(Error, Debug, Clone)]
 
 /// The error type for Vino Entities.
-pub enum EntityError {
-  /// Error used when trying to parse a URL into an entity.
-  #[error("URL parse error {0}")]
-  ParseError(String),
+pub enum ParseError {
+  /// Encountered an invalid scheme when parsing an entity URL.
+  #[error("Invalid scheme {0}")]
+  Scheme(String),
+  /// No authority/host supplied in the entity URL.
+  #[error("Missing authority/host")]
+  Authority,
+  /// Invalid authority/host supplied in the entity URL.
+  #[error("Invalid authority/host '{0}', missing separator '.'")]
+  InvalidAuthority(String),
+  /// Invalid authority/host kind.
+  #[error("Invalid authority/host kind '{0}'")]
+  InvalidAuthorityKind(String),
+  /// Error parsing an entity URL.
+  #[error("{0}")]
+  General(String),
 }

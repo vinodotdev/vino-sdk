@@ -15,8 +15,9 @@ pub mod sdk {
 
   pub use futures::{Stream, StreamExt};
   pub use vino_provider::{PortOutput, ProviderLink, ProviderOutput};
-  pub use vino_transport::{Invocation, MessageTransport, TransportWrapper};
+  pub use vino_transport::{MessageTransport, TransportWrapper};
   pub use wasmflow_boundary::IncomingPayload;
+  pub use wasmflow_invocation::Invocation;
   pub use wasmflow_traits::{Component, IntoInputs, PortChannel, Writable};
 
   pub mod payload {
@@ -28,19 +29,19 @@ pub mod sdk {
 
   pub mod stateful {
     #[cfg(not(target_arch = "wasm32"))]
-    pub use vino_wapc::guest::stateful::native::Dispatcher as NativeDispatcher;
+    pub use wasmflow_component::guest::stateful::native::Dispatcher as NativeDispatcher;
     #[cfg(target_arch = "wasm32")]
-    pub use vino_wapc::guest::stateful::wasm::Dispatcher as WasmDispatcher;
-    pub use vino_wapc::guest::stateful::BatchedJobExecutor;
+    pub use wasmflow_component::guest::stateful::wasm::Dispatcher as WasmDispatcher;
+    pub use wasmflow_component::guest::stateful::BatchedJobExecutor;
     pub use wasmflow_traits::stateful::BatchedComponent;
   }
 
   pub mod ephemeral {
     #[cfg(not(target_arch = "wasm32"))]
-    pub use vino_wapc::guest::ephemeral::native::Dispatcher as NativeDispatcher;
+    pub use wasmflow_component::guest::ephemeral::native::Dispatcher as NativeDispatcher;
     #[cfg(target_arch = "wasm32")]
-    pub use vino_wapc::guest::ephemeral::wasm::Dispatcher as WasmDispatcher;
-    pub use vino_wapc::guest::ephemeral::BatchedJobExecutor;
+    pub use wasmflow_component::guest::ephemeral::wasm::Dispatcher as WasmDispatcher;
+    pub use wasmflow_component::guest::ephemeral::BatchedJobExecutor;
     pub use wasmflow_traits::ephemeral::BatchedComponent;
   }
 
@@ -48,7 +49,7 @@ pub mod sdk {
   pub mod wasm {
     pub use wasmflow_boundary::wasm::EncodedMap;
     pub mod runtime {
-      pub use vino_wapc::guest::wasm::runtime::register_dispatcher;
+      pub use wasmflow_component::guest::wasm::runtime::register_dispatcher;
     }
     pub use vino_provider::wasm::{port_send, port_send_close, PortOutput, ProviderOutput};
   }
@@ -158,10 +159,10 @@ pub mod provider {
 
 pub mod types {
   pub use vino_transport::{BoxedTransportStream, TransportStream};
-  pub use vino_types::*;
+  pub use wasmflow_interface::*;
   pub use wasmflow_streams::PacketStream;
 }
 
 #[macro_use]
 #[allow(unreachable_pub)]
-pub use vino_wapc::console_log;
+pub use wasmflow_component::console_log;

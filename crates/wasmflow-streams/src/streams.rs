@@ -8,6 +8,7 @@ use vino_transport::TransportWrapper;
 
 pin_project! {
   /// A stream of [PacketWrapper]s
+  #[must_use]
   pub struct PacketStream {
     finished: bool,
     buffer: Option<HashMap<String, Vec<Packet>>>,
@@ -43,7 +44,7 @@ impl PacketStream {
     if !self.finished {
       let mut map = HashMap::new();
       while let Some(next) = self.stream.next().await {
-        let entry = map.entry(next.port).or_insert_with(|| Vec::<Packet>::new());
+        let entry = map.entry(next.port).or_insert_with(Vec::<Packet>::new);
         if !next.payload.is_signal() {
           entry.push(next.payload);
         }
@@ -91,6 +92,7 @@ impl Stream for PacketStream {
 
 pin_project! {
   /// A stream of [PacketWrapper]s
+  #[must_use]
   pub struct TransportStream2 {
     #[pin]
     stream: Box<dyn Stream<Item = TransportWrapper> + Unpin + Send + Sync>,

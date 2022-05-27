@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 use vino_entity::Entity;
 use vino_packet::PacketMap;
 #[cfg(not(target_arch = "wasm32"))]
-use vino_wapc::guest::native::BoxedFuture;
+use wasmflow_component::guest::native::BoxedFuture;
 #[cfg(target_arch = "wasm32")]
-use vino_wapc::guest::wasm::BoxedFuture;
+use wasmflow_component::guest::wasm::BoxedFuture;
 
 use crate::ProviderOutput;
 
@@ -52,7 +52,7 @@ impl std::fmt::Display for ProviderLink {
 async fn link_call(origin: &str, target: &str, payload: &PacketMap) -> Result<ProviderOutput, crate::error::Error> {
   let bytes = vino_codec::messagepack::serialize(payload)?;
   println!("bytes for host call {:?}", bytes);
-  let result = vino_wapc::guest::wasm::runtime::async_host_call("1", &origin, &target, &bytes)
+  let result = wasmflow_component::guest::wasm::runtime::async_host_call("1", &origin, &target, &bytes)
     .await
     .map_err(crate::error::Error::Protocol)?;
   println!("post host call {:?}", result);

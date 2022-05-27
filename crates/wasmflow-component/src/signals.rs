@@ -44,7 +44,7 @@ impl FromStr for OutputSignal {
 pub enum HostCommand {
   /// Port output.
   Output,
-  /// Make a call to a linked provider.
+  /// Make a call to a linked entity.
   LinkCall,
   /// Logging output.
   Log,

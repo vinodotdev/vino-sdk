@@ -12,11 +12,7 @@ where
   T: ?Sized + Serialize,
 {
   let mut buf = Vec::new();
-  match item.serialize(
-    &mut Serializer::new(&mut buf)
-      .with_string_variants()
-      .with_struct_map(),
-  ) {
+  match item.serialize(&mut Serializer::new(&mut buf).with_struct_map()) {
     Ok(_) => Ok(buf),
     Err(e) => Err(e),
   }
@@ -33,9 +29,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn rmp_deserialize<'de, T: Deserialize<'de>>(
-  buf: &[u8],
-) -> std::result::Result<T, rmp_serde::decode::Error> {
+pub fn rmp_deserialize<'de, T: Deserialize<'de>>(buf: &[u8]) -> std::result::Result<T, rmp_serde::decode::Error> {
   let mut de = Deserializer::new(Cursor::new(buf));
   Deserialize::deserialize(&mut de)
 }

@@ -16,9 +16,8 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = []
-all = ["async", "json", "raw", "invocation"]
+all = ["async", "json", "raw"]
 wasm = []
-invocation = ["vino-entity", "uuid", "serde-value"]
 async = ["tokio", "tokio-stream", "parking_lot"]
 json = ["serde_json"]
 raw = ["serde-value"]
@@ -33,9 +32,6 @@ vino-codec = { path = "../vino-codec", version = "0.9.0" }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 tracing = "0.1"
-
-# invocation
-uuid = { version = "0.8", features = ["v4", "serde"], optional = true }
 
 # raw
 serde-value = { version = "0.7", optional = true }

@@ -157,6 +157,10 @@ mod tests {
     fn get_port_name(&self) -> &str {
       &self.port.name
     }
+
+    fn get_id(&self) -> u32 {
+      0
+    }
   }
 
   struct I64Sender {
@@ -170,6 +174,10 @@ mod tests {
 
     fn get_port_name(&self) -> &str {
       &self.port.name
+    }
+
+    fn get_id(&self) -> u32 {
+      0
     }
   }
 

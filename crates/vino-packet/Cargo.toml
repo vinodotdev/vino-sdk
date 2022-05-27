@@ -15,6 +15,7 @@ homepage = "https://docs.vino.dev"
 
 [features]
 default = []
+all = ["v0", "v1"]
 v0 = []
 v1 = []
 
