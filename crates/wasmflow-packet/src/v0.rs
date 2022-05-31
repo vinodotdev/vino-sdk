@@ -65,7 +65,7 @@ impl Payload {
     }
   }
 
-  /// Try to deserialize a [Packet] into the target type
+  /// Try to deserialize a [Payload] into the target type
   pub fn deserialize<T: DeserializeOwned>(self) -> Result<T, Error> {
     unimplemented!()
   }

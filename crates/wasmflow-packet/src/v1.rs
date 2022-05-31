@@ -83,7 +83,7 @@ pub enum Signal {
 }
 
 impl Packet {
-  /// A one-liner to turn a serializable object into a [Payload::MessagePack] variant.
+  /// A one-liner to turn a serializable object into a [Serialized::MessagePack] variant.
   pub fn messagepack<T: Serialize>(t: &T) -> Self {
     match rmp_serialize(t) {
       Ok(bytes) => Self::Success(Serialized::MessagePack(bytes)),
@@ -91,7 +91,7 @@ impl Packet {
     }
   }
 
-  /// A one-liner to turn a serializable object into a [Payload::Success] variant.
+  /// A one-liner to turn a serializable object into a [Packet::Success] variant.
   pub fn success<T: Serialize>(t: &T) -> Self {
     match raw_serialize(t) {
       Ok(bytes) => Self::Success(Serialized::Struct(bytes)),
@@ -99,17 +99,17 @@ impl Packet {
     }
   }
 
-  /// Creates a [Payload::Signal(Signal::Done)]
+  /// Creates a [Packet::Signal(Signal::Done)]
   pub fn done() -> Self {
     Self::Signal(Signal::Done)
   }
 
-  /// Creates a [Payload::Failure(Failure::Exception)]
+  /// Creates a [Packet::Failure(Failure::Exception)]
   pub fn exception<T: AsRef<str>>(msg: T) -> Self {
     Self::Failure(Failure::Exception(msg.as_ref().to_owned()))
   }
 
-  /// Creates a [Payload::Failure(Failure::Error)]
+  /// Creates a [Packet::Failure(Failure::Error)]
   pub fn error<T: AsRef<str>>(msg: T) -> Self {
     Self::Failure(Failure::Error(msg.as_ref().to_owned()))
   }
@@ -123,11 +123,9 @@ impl Packet {
 fn try_from<T: DeserializeOwned>(value: Packet) -> Result<T, Error> {
   match value {
     Packet::Success(success) => match success {
-      Serialized::MessagePack(v) => {
-        wasmflow_codec::messagepack::deserialize(&v).map_err(|e| Error::DeserializationError(e))
-      }
-      Serialized::Struct(v) => wasmflow_codec::raw::deserialize(v).map_err(|e| Error::DeserializationError(e)),
-      Serialized::Json(v) => wasmflow_codec::json::deserialize(&v).map_err(|e| Error::DeserializationError(e)),
+      Serialized::MessagePack(v) => wasmflow_codec::messagepack::deserialize(&v).map_err(Error::DeserializationError),
+      Serialized::Struct(v) => wasmflow_codec::raw::deserialize(v).map_err(Error::DeserializationError),
+      Serialized::Json(v) => wasmflow_codec::json::deserialize(&v).map_err(Error::DeserializationError),
     },
     Packet::Failure(failure) => match failure {
       Failure::Invalid => Err(Error::Invalid),

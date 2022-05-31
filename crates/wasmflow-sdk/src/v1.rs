@@ -16,6 +16,7 @@ pub mod sdk {
   pub use futures::{Stream, StreamExt};
   pub use wasmflow_boundary::IncomingPayload;
   pub use wasmflow_collection_link::ProviderLink;
+  pub use wasmflow_entity::{Entity, SystemEntity};
   #[cfg(not(target_arch = "wasm32"))]
   pub use wasmflow_invocation::Invocation;
   pub use wasmflow_output::{PortOutput, ProviderOutput};
@@ -131,6 +132,12 @@ pub mod error {
     }
   }
 
+  impl From<wasmflow_output::error::Error> for Error {
+    fn from(e: wasmflow_output::error::Error) -> Self {
+      Error::Upstream(Box::new(e))
+    }
+  }
+
   impl From<wasmflow_codec::Error> for Error {
     fn from(e: wasmflow_codec::Error) -> Self {
       Error::CodecError(e.to_string())
@@ -145,9 +152,7 @@ pub mod error {
 }
 
 pub mod codec {
-  #[cfg(not(target_arch = "wasm32"))]
-  pub use wasmflow_codec::json;
-  pub use wasmflow_codec::messagepack;
+  pub use wasmflow_codec::{json, messagepack};
 }
 
 pub mod provider {

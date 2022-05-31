@@ -49,7 +49,7 @@ pub(crate) extern "C" fn __async_guest_call(id: i32, op_len: i32, req_len: i32) 
 
   super::executor::spawn(async move {
     println!(">> guest: in async task");
-    let result = dispatcher.dispatch(id, op_str, slice).await;
+    let result = dispatcher.dispatch(op_str, slice).await;
     println!(">> guest: operation result: {:?}", result);
     let code = match result {
       Ok(result) => {

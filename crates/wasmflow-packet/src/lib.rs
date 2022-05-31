@@ -75,12 +75,11 @@
 // Add exceptions here
 #![allow()]
 //
-/// Version 0 of the output format.
+/// Version 0 of the packet format.
 #[cfg(feature = "v0")]
 pub mod v0;
 
-/// Version 1 of the output format.
-#[cfg(feature = "v1")]
+/// Version 1 of the packet format.
 pub mod v1;
 
 /// The crate's error module.

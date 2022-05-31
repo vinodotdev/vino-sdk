@@ -4,10 +4,8 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-// use wasmflow_codec::messagepack;
 #[cfg(feature = "v0")]
 pub use crate::v0;
-#[cfg(feature = "v1")]
 pub use crate::v1;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -20,19 +18,16 @@ pub enum Packet {
   V0(v0::Payload),
   /// Version 1 of the payload format (alpha).
   #[serde(rename = "v1")]
-  #[cfg(feature = "v1")]
   V1(v1::Packet),
 }
 
 impl Packet {
   #[must_use]
   /// Does the [Packet] signify the originating job is completed?.
-  #[cfg(any(feature = "v1", feature = "v0"))]
   pub fn is_done(&self) -> bool {
     match self {
       #[cfg(feature = "v0")]
       Packet::V0(v) => matches!(v, v0::Payload::Done | v0::Payload::Error(_)),
-      #[cfg(feature = "v1")]
       Packet::V1(v) => matches!(
         v,
         v1::Packet::Signal(v1::Signal::Done) | v1::Packet::Failure(v1::Failure::Error(_))
@@ -42,12 +37,10 @@ impl Packet {
 
   #[must_use]
   /// Does the [Packet] signify the originating job is completed?.
-  #[cfg(any(feature = "v1", feature = "v0"))]
   pub fn is_signal(&self) -> bool {
     match self {
       #[cfg(feature = "v0")]
       Packet::V0(v) => matches!(v, v0::Payload::Done),
-      #[cfg(feature = "v1")]
       Packet::V1(v) => matches!(v, v1::Packet::Signal(_)),
     }
   }
@@ -56,13 +49,14 @@ impl Packet {
   pub fn from_messagepack(bytes: &[u8]) -> Self {
     match wasmflow_codec::messagepack::deserialize::<Packet>(bytes) {
       Ok(packet) => packet,
-      Err(e) => Packet::V0(v0::Payload::Error(format!("Error deserializing packet: {}", e))),
+      Err(e) => Packet::V1(v1::Packet::error(format!("Error deserializing packet: {}", e))),
     }
   }
 
-  /// Converts the [MessageTransport] into a messagepack-compatible transport.
+  /// Converts the [Packet] into a messagepack-compatible transport.
   pub fn to_messagepack(&mut self) {
-    match &self {
+    match self {
+      #[cfg(feature = "v0")]
       Packet::V0(_) => unimplemented!("Converted a V0 packet to messagepack is not implemented via this function."),
       Packet::V1(v) => {
         if let v1::Packet::Success(v) = v {
@@ -91,7 +85,9 @@ impl Packet {
 
 fn try_from<T: DeserializeOwned>(value: Packet) -> Result<T, Error> {
   match value {
+    #[cfg(feature = "v0")]
     Packet::V0(p) => p.deserialize(),
+
     Packet::V1(p) => p.deserialize(),
   }
 }
@@ -150,7 +146,7 @@ impl PacketMap {
   pub fn insert<T: AsRef<str>>(&mut self, port: T, value: impl Serialize) {
     self
       .inner
-      .insert(port.as_ref().to_owned(), v1::Packet::success(&value).into());
+      .insert(port.as_ref().to_owned(), Packet::V1(v1::Packet::success(&value)));
   }
 }
 

@@ -17,7 +17,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = []
-v1 = ["wasmflow-packet/v1"]
+v1 = []
 signatures = []
 
 

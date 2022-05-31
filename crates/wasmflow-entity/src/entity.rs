@@ -218,25 +218,25 @@ mod tests {
   use super::*;
   #[test]
   fn test() -> Result<(), Error> {
-    let entity = Entity::from_str("ofp://namespace.coll/comp_name")?;
+    let entity = Entity::from_str("wafl://namespace.coll/comp_name")?;
     assert_eq!(entity, Entity::component("namespace", "comp_name"));
 
-    let entity = Entity::from_str("ofp://some_ns.coll/")?;
+    let entity = Entity::from_str("wafl://some_ns.coll/")?;
     assert_eq!(entity, Entity::collection("some_ns"));
 
-    let entity = Entity::from_str("ofp://host_id.host/")?;
+    let entity = Entity::from_str("wafl://host_id.host/")?;
     assert_eq!(entity, Entity::host("host_id"));
 
-    let entity = Entity::from_str("ofp://host_id.ref/")?;
+    let entity = Entity::from_str("wafl://host_id.ref/")?;
     assert_eq!(entity, Entity::reference("host_id"));
 
-    let entity = Entity::from_str("ofp://client_id.client/")?;
+    let entity = Entity::from_str("wafl://client_id.client/")?;
     assert_eq!(entity, Entity::client("client_id"));
 
-    let entity = Entity::from_str("ofp://test.sys/?msg=Hello")?;
+    let entity = Entity::from_str("wafl://test.sys/?msg=Hello")?;
     assert_eq!(entity, Entity::test("Hello"));
 
-    let entity = Entity::from_str("ofp://other.sys/?msg=Else")?;
+    let entity = Entity::from_str("wafl://other.sys/?msg=Else")?;
     assert_eq!(
       entity,
       Entity::System(SystemEntity {

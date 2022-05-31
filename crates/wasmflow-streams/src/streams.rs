@@ -3,8 +3,8 @@ use std::pin::Pin;
 
 use futures::{Stream, StreamExt};
 use pin_project_lite::pin_project;
-use wasmflow_packet::{Packet, PacketWrapper};
 use vino_transport::TransportWrapper;
+use wasmflow_packet::{Packet, PacketWrapper};
 
 pin_project! {
   /// A stream of [PacketWrapper]s
@@ -50,6 +50,7 @@ impl PacketStream {
         }
       }
       self.buffer = Some(map);
+      self.finished = true;
     }
   }
 

@@ -3,8 +3,6 @@
 #[cfg(feature = "async")]
 pub(super) mod stream;
 
-/// JSON-related module.
-#[cfg(feature = "json")]
 pub(super) mod transport_json;
 
 /// The module for the TransportMap, a Port->[MessageTransport] map that serves as input to a component invocation.
@@ -18,11 +16,7 @@ use std::fmt::Display;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use wasmflow_codec::error::CodecError;
-#[cfg(feature = "json")]
-use wasmflow_codec::json;
-use wasmflow_codec::messagepack;
-#[cfg(feature = "raw")]
-use wasmflow_codec::raw;
+use wasmflow_codec::{json, messagepack, raw};
 use wasmflow_packet::{v0, v1, Packet};
 
 use crate::{Error, Result};
@@ -53,12 +47,10 @@ pub enum Serialized {
   MessagePack(Vec<u8>),
 
   #[serde(rename = "1")]
-  #[cfg(feature = "raw")]
   /// A successful payload in a generic intermediary format.
   Struct(serde_value::Value),
 
   #[serde(rename = "2")]
-  #[cfg(feature = "json")]
   /// A JSON String.
   Json(String),
 }
@@ -158,9 +150,7 @@ impl MessageTransport {
   pub fn to_messagepack(&mut self) {
     match &self {
       Self::Success(Serialized::MessagePack(_)) => {}
-      #[cfg(feature = "raw")]
       Self::Success(Serialized::Struct(v)) => *self = Self::messagepack(&v),
-      #[cfg(feature = "json")]
       Self::Success(Serialized::Json(json)) => {
         *self = match json::deserialize::<serde_value::Value>(json) {
           Ok(val) => Self::messagepack(&val),
@@ -181,7 +171,6 @@ impl MessageTransport {
 
   /// Creates a [MessageTransport] by serializing a passed object into a raw intermediary format
   pub fn success<T: Serialize>(item: &T) -> Self {
-    #[cfg(feature = "raw")]
     match raw::serialize(item) {
       Ok(v) => Self::Success(Serialized::Struct(v)),
       Err(e) => Self::Failure(Failure::Error(format!(
@@ -189,17 +178,8 @@ impl MessageTransport {
         e
       ))),
     }
-    #[cfg(not(feature = "raw"))]
-    match messagepack::serialize(item) {
-      Ok(v) => Self::Success(Serialized::MessagePack(v)),
-      Err(e) => Self::Failure(Failure::Error(format!(
-        "Error serializing into messagepack format: {}",
-        e
-      ))),
-    }
   }
 
-  #[cfg(feature = "json")]
   /// Creates a [MessageTransport] by serializing a passed object into JSON
   pub fn json<T: Serialize>(item: &T) -> Self {
     match json::serialize(item) {
@@ -235,9 +215,7 @@ fn try_from<T: DeserializeOwned>(value: MessageTransport) -> Result<T> {
       Serialized::MessagePack(v) => {
         messagepack::rmp_deserialize(&v).map_err(|e| Error::DeserializationError(e.to_string()))
       }
-      #[cfg(feature = "raw")]
       Serialized::Struct(v) => raw::raw_deserialize(v).map_err(|e| Error::DeserializationError(e.to_string())),
-      #[cfg(feature = "json")]
       Serialized::Json(v) => json::json_deserialize(&v).map_err(|e| Error::DeserializationError(e.to_string())),
     },
     MessageTransport::Failure(failure) => match failure {
@@ -257,14 +235,8 @@ impl From<Packet> for MessageTransport {
         v0::Payload::Error(v) => MessageTransport::Failure(Failure::Error(v)),
         v0::Payload::Invalid => MessageTransport::Failure(Failure::Invalid),
         v0::Payload::MessagePack(bytes) => MessageTransport::Success(Serialized::MessagePack(bytes)),
-        #[cfg(feature = "json")]
         v0::Payload::Json(v) => MessageTransport::Success(Serialized::Json(v)),
-        #[cfg(not(feature = "json"))]
-        v0::Payload::Json(v) => MessageTransport::success(&v),
-        #[cfg(feature = "raw")]
         v0::Payload::Success(v) => MessageTransport::Success(Serialized::Struct(v)),
-        #[cfg(not(feature = "raw"))]
-        v0::Payload::Success(v) => MessageTransport::success(&v),
         v0::Payload::Done => MessageTransport::Signal(MessageSignal::Done),
         v0::Payload::OpenBracket => MessageTransport::Signal(MessageSignal::OpenBracket),
         v0::Payload::CloseBracket => MessageTransport::Signal(MessageSignal::CloseBracket),
@@ -274,14 +246,8 @@ impl From<Packet> for MessageTransport {
           wasmflow_packet::v1::Serialized::MessagePack(bytes) => {
             MessageTransport::Success(Serialized::MessagePack(bytes))
           }
-          #[cfg(feature = "raw")]
           wasmflow_packet::v1::Serialized::Struct(v) => MessageTransport::Success(Serialized::Struct(v)),
-          #[cfg(not(feature = "raw"))]
-          wasmflow_packet::v1::Serialized::Struct(v) => MessageTransport::success(&v),
-          #[cfg(feature = "json")]
           wasmflow_packet::v1::Serialized::Json(v) => MessageTransport::Success(Serialized::Json(v)),
-          #[cfg(not(feature = "json"))]
-          wasmflow_packet::v1::Serialized::Json(v) => MessageTransport::success(&v),
         },
         wasmflow_packet::v1::Packet::Failure(failure) => match failure {
           wasmflow_packet::v1::Failure::Invalid => MessageTransport::Failure(Failure::Invalid),
@@ -304,9 +270,7 @@ impl From<MessageTransport> for v1::Packet {
     match output {
       MessageTransport::Success(success) => match success {
         Serialized::MessagePack(v) => v1::Packet::Success(v1::Serialized::MessagePack(v)),
-        #[cfg(feature = "raw")]
         Serialized::Struct(v) => v1::Packet::Success(v1::Serialized::Struct(v)),
-        #[cfg(feature = "json")]
         Serialized::Json(v) => v1::Packet::Success(v1::Serialized::Json(v)),
       },
       MessageTransport::Failure(failure) => match failure {
@@ -374,9 +338,7 @@ impl Display for Serialized {
       "{}",
       match self {
         Serialized::MessagePack(_) => "MessagePack",
-        #[cfg(feature = "raw")]
         Serialized::Struct(_) => "Success",
-        #[cfg(feature = "json")]
         Serialized::Json(_) => "JSON",
       }
     ))
@@ -388,7 +350,6 @@ mod tests {
 
   use super::*;
   #[test_log::test]
-  #[cfg(feature = "json")]
   fn serializes_done() -> Result<()> {
     let close = MessageTransport::done();
     let value = close.as_json();

@@ -3,11 +3,7 @@ use std::fmt::Display;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "json")]
-use wasmflow_codec::json;
-use wasmflow_codec::messagepack;
-#[cfg(feature = "raw")]
-use wasmflow_codec::raw;
+use wasmflow_codec::{json, messagepack, raw};
 
 use crate::error::TransportError;
 use crate::{Error, MessageTransport, Serialized, TransportWrapper};
@@ -32,7 +28,6 @@ impl TransportMap {
   }
 
   /// Deserialize a CLI output JSON Object into a [TransportMap].
-  #[cfg(feature = "json")]
   pub fn from_json_output(json: &str) -> Result<Self> {
     if json.trim() == "" {
       Ok(TransportMap::default())
@@ -43,7 +38,6 @@ impl TransportMap {
   }
 
   /// Deserialize a JSON Object into a [TransportMap]
-  #[cfg(feature = "json")]
   pub fn from_json_str(json: &str) -> Result<Self> {
     if json.trim() == "" {
       Ok(TransportMap::default())
@@ -58,8 +52,7 @@ impl TransportMap {
     }
   }
 
-  #[cfg(feature = "json")]
-  /// Turn a list of "field=value" strings into a [TransportMap] of [MessageTransport::Json] items.
+  /// Turn a list of "field=value" strings into a [TransportMap] of [Serialized::Json] items.
   pub fn from_kv_json(values: &[String]) -> Result<Self> {
     let mut payload = TransportMap::default();
     for input in values {
@@ -92,9 +85,7 @@ impl TransportMap {
     match v {
       MessageTransport::Success(success) => match success {
         Serialized::MessagePack(bytes) => messagepack::deserialize(&bytes).map_err(de_err),
-        #[cfg(feature = "raw")]
         Serialized::Struct(v) => raw::deserialize(v).map_err(de_err),
-        #[cfg(feature = "json")]
         Serialized::Json(v) => json::deserialize(&v).map_err(de_err),
       },
       MessageTransport::Failure(_) => e,

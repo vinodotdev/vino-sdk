@@ -2,9 +2,11 @@ use std::marker::PhantomData;
 
 use serde::de::DeserializeOwned;
 use tokio_stream::StreamExt;
-use wasmflow_packet::{Packet, PacketWrapper};
 use vino_transport::TransportStream;
+use wasmflow_packet::{Packet, PacketWrapper};
 use wasmflow_streams::PacketStream;
+
+use crate::error::Error;
 
 /// A wrapper object for the packets returned from the provider call.
 #[allow(missing_debug_implementations)]
@@ -34,13 +36,17 @@ impl ProviderOutput {
       )),
     }
   }
-  /// Get a list of [MessageTransport] from the specified port.
-  pub async fn drain_port(&mut self, port: &str) -> Vec<Packet> {
-    self.packets.take_port(port).await.unwrap()
+  /// Get a list of [vino_transport::MessageTransport] from the specified port.
+  pub async fn drain_port(&mut self, port: &str) -> Result<Vec<Packet>, Error> {
+    self
+      .packets
+      .take_port(port)
+      .await
+      .ok_or_else(|| Error::PortNotFound(port.to_owned()))
   }
 }
 
-/// Iterator wrapper for a list of [MessageTransport]s
+/// Iterator wrapper for a list of [vino_transport::MessageTransport]s
 #[must_use]
 pub struct PortOutput<T: DeserializeOwned> {
   name: String,
@@ -55,7 +61,7 @@ impl<T: DeserializeOwned> std::fmt::Debug for PortOutput<T> {
 }
 
 impl<T: DeserializeOwned> PortOutput<T> {
-  /// Constructor for [PortOutput] that takes a list of [MessageTransport]
+  /// Constructor for [PortOutput] that takes a list of [vino_transport::MessageTransport]
   pub fn new(name: String, packets: Vec<Packet>) -> Self {
     Self {
       name,
@@ -65,7 +71,7 @@ impl<T: DeserializeOwned> PortOutput<T> {
   }
 
   /// Grab the next value and deserialize it in one method.
-  pub fn deserialize_next(&mut self) -> Result<T, crate::error::Error> {
+  pub fn deserialize_next(&mut self) -> Result<T, Error> {
     match self.iter.next() {
       Some(val) => Ok(
         val

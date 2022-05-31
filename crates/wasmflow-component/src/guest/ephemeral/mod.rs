@@ -6,7 +6,7 @@ pub mod wasm {
   use crate::guest::BoxedError;
   pub trait Dispatcher {
     /// Dispatch method
-    fn dispatch(&self, id: i32, op: &'static str, payload: &'static [u8]) -> BoxedFuture<Result<Vec<u8>, BoxedError>>;
+    fn dispatch(&self, op: &'static str, payload: &'static [u8]) -> BoxedFuture<Result<Vec<u8>, BoxedError>>;
   }
 }
 
@@ -34,14 +34,14 @@ pub trait BatchedJobExecutor {
   /// The return type of the component.
   type Return: Send + Sync;
 
-  /// [BatchedJob::execute] that kicks off a run of a component, passing along an [super::IncomingPayload].
+  /// [BatchedJobExecutor::execute] that kicks off a run of a component, passing along an [wasmflow_boundary::IncomingPayload].
   #[cfg(not(target_arch = "wasm32"))]
   fn execute(
     &self,
     payload: wasmflow_boundary::IncomingPayload<Self::Payload, Self::Config, Self::State>,
   ) -> super::native::BoxedFuture<Result<Self::Return, Box<dyn std::error::Error + Send + Sync>>>;
 
-  /// [BatchedJob::execute] signature for WASM targets that does not require the future to be Send/Sync.
+  /// [BatchedJobExecutor::execute] signature for WASM targets that does not require the future to be Send/Sync.
   #[cfg(target_arch = "wasm32")]
   fn execute(
     &self,

@@ -1,11 +1,10 @@
-#[cfg(feature = "v1")]
 /// Utility functions that return v1 packets.
 pub mod v1 {
   use serde::de::DeserializeOwned;
 
   use crate::incoming::IncomingPayload;
 
-  /// Convert an [vino_transport::Invocation] into an [IncomingPayload].
+  /// Convert an [wasmflow_invocation::Invocation] into an [IncomingPayload].
   pub fn from_invocation<C, S>(
     invocation: wasmflow_invocation::Invocation,
   ) -> Result<IncomingPayload<wasmflow_packet::v1::PacketMap, C, S>, Box<dyn std::error::Error + Send + Sync>>

@@ -1,9 +1,10 @@
 {
+  "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
   "git.ignoreLimitWarning": true,
   "rust-analyzer.cargo.features": [
     "vino-transport/all",
     "wasmflow-boundary/v1",
-    "wasmflow-components/v1"
+    "wasmflow-sdk/v1"
   ],
   "rust-analyzer.rustfmt.overrideCommand": [
     "rustup",

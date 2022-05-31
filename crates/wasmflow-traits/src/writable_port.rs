@@ -141,8 +141,8 @@ impl PortChannel {
 #[cfg(test)]
 mod tests {
 
-  use wasmflow_packet::v1::Packet;
   use vino_transport::{TransportStream, TransportWrapper};
+  use wasmflow_packet::v1::Packet;
 
   use super::*;
   struct StringSender {
@@ -204,7 +204,7 @@ mod tests {
     };
     let mut aggregated = TransportStream::new(aggregated.map(|pw| pw.into()));
 
-    let mut messages: Vec<TransportWrapper> = aggregated.drain_port("test1").await;
+    let mut messages = aggregated.drain_port("test1").await?;
     assert_eq!(messages.len(), 2);
     assert_eq!(aggregated.buffered_size(), (1, 2));
     let payload: String = messages.remove(0).deserialize().unwrap();
@@ -214,7 +214,7 @@ mod tests {
     println!("Payload a2: {}", payload);
     assert_eq!(payload, "Second");
 
-    let mut messages: Vec<TransportWrapper> = aggregated.drain_port("test2").await;
+    let mut messages = aggregated.drain_port("test2").await?;
     assert_eq!(messages.len(), 2);
     assert_eq!(aggregated.buffered_size(), (0, 0));
     let payload: i64 = messages.remove(0).deserialize().unwrap();

@@ -35,7 +35,7 @@ impl TransportWrapper {
     Self::new(SYSTEM_ID, MessageTransport::done())
   }
 
-  /// Returns true if the [TransportWrapper] is a system message with the payload of [MessageSignal::Done].
+  /// Returns true if the [TransportWrapper] is a system message with the payload of [crate::MessageSignal::Done].
   #[must_use]
   pub fn is_system_close(&self) -> bool {
     self.port == SYSTEM_ID && self.payload == MessageTransport::done()
@@ -76,9 +76,7 @@ impl TransportWrapper {
   }
 
   /// Converts the embedded [MessageTransport] into a [serde_json::Value::Object]
-  /// map of port names to [TransportJson]s
   #[must_use]
-  #[cfg(feature = "json")]
   pub fn as_json(&self) -> serde_json::Value {
     let payload = self.payload.as_json();
 
@@ -89,7 +87,6 @@ impl TransportWrapper {
   }
 }
 
-#[cfg(feature = "json")]
 impl std::fmt::Display for TransportWrapper {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", self.as_json())

@@ -18,7 +18,7 @@ maintenance = { status = "actively-developed" }
 [features]
 
 [dependencies]
-vino-transport = { path = "../vino-transport", version = "0.9.0" }
+vino-transport = { path = "../vino-transport", version = "0.9.0", features = [] }
 wasmflow-packet = { path = "../wasmflow-packet", version = "0.9.0", features = [
   "all",
 ] }

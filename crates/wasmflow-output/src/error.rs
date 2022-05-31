@@ -9,6 +9,9 @@ pub enum Error {
   /// An attempt to take the next packet failed.
   EndOfOutput(String),
 
+  /// Tried to take packets from a port that never produced any.
+  PortNotFound(String),
+
   /// An error originating from a component task.
   Component(String),
 }
@@ -37,6 +40,11 @@ impl std::fmt::Display for Error {
       Error::Codec(e) => write!(f, "Codec error: {}", e),
       Error::Component(v) => write!(f, "{}", v),
       Error::EndOfOutput(v) => write!(f, "No output available for port '{}'", v),
+      Error::PortNotFound(v) => write!(
+        f,
+        "Tried to take packet from port '{}' but port '{}' never received anything.",
+        v, v
+      ),
     }
   }
 }

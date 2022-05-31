@@ -1,4 +1,4 @@
-/// The error type used when attempting to deserialize a [crate::Packet].
+/// The error type used when attempting to deserialize a [wasmflow_packet::Packet].
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
   /// Error returned when trying to perform actions on a closed PacketStream.

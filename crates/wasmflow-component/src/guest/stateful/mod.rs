@@ -10,7 +10,6 @@ pub mod wasm {
     /// Dispatch method
     fn dispatch(
       &self,
-      id: i32,
       op: &'static str,
       payload: &'static [u8],
       context: Self::Context,
@@ -50,7 +49,7 @@ pub trait BatchedJobExecutor {
   /// The return type of the component.
   type Return: Send + Sync;
 
-  /// [BatchedJob::execute] for WASM components that do not require a future be Send + Sync.
+  /// [BatchedJobExecutor::execute] for WASM components that do not require a future be Send + Sync.
   #[cfg(target_arch = "wasm32")]
   fn execute(
     &self,
@@ -58,7 +57,7 @@ pub trait BatchedJobExecutor {
     context: Self::Context,
   ) -> super::wasm::BoxedFuture<Result<Self::Return, Box<dyn std::error::Error + Send + Sync>>>;
 
-  /// [BatchedJob::execute] that kicks off a run of a component, passing along an [super::IncomingPayload] and a persistent context.
+  /// [BatchedJobExecutor::execute] that kicks off a run of a component, passing along an [wasmflow_boundary::IncomingPayload] and a persistent context.
   #[cfg(not(target_arch = "wasm32"))]
   fn execute(
     &self,

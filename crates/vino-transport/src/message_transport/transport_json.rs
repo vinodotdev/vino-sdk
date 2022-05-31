@@ -60,10 +60,10 @@ pub enum JsonError {
   /// No error
   None,
 
-  /// A message from a [MessageTransport::Exception]
+  /// A message from a [Failure::Exception]
   Exception,
 
-  /// A message from a [MessageTransport::Error]
+  /// A message from a [Failure::Error]
   Error,
 
   /// An error originating internally
@@ -135,9 +135,9 @@ impl MessageTransport {
         Serialized::Struct(v) => handle_result_conversion(
           wasmflow_codec::raw::deserialize::<serde_json::Value>(v.clone()).map_err(|e| e.to_string()),
         ),
-        Serialized::Json(v) => {
-          handle_result_conversion(wasmflow_codec::json::deserialize::<serde_json::Value>(&v).map_err(|e| e.to_string()))
-        }
+        Serialized::Json(v) => handle_result_conversion(
+          wasmflow_codec::json::deserialize::<serde_json::Value>(&v).map_err(|e| e.to_string()),
+        ),
       },
       MessageTransport::Failure(failure) => match &failure {
         Failure::Invalid => TransportJson {

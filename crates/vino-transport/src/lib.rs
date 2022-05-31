@@ -88,7 +88,6 @@ pub type Error = error::TransportError;
 
 #[cfg(feature = "async")]
 pub use message_transport::stream::TransportStream;
-#[cfg(feature = "json")]
 pub use message_transport::transport_json::{JsonError, TransportJson};
 pub use message_transport::transport_map::TransportMap;
 pub use message_transport::transport_wrapper::TransportWrapper;
